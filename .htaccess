@@ -1,0 +1,28 @@
+# Configuration Apache pour OVH - Racine du projet
+RewriteEngine On
+
+# Redirection vers le dossier public
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ /public/$1 [L]
+
+# Sécurité - Bloquer l'accès aux dossiers sensibles
+<Directory "backend">
+    Order Allow,Deny
+    Deny from all
+</Directory>
+
+<Directory "database">
+    Order Allow,Deny
+    Deny from all
+</Directory>
+
+# Fichiers sensibles
+<Files "*.sqlite">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "deploy.sh">
+    Order Allow,Deny
+    Deny from all
+</Files>

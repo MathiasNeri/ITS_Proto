@@ -1,0 +1,70 @@
+# Fichiers de configuration sensibles
+config.php
+.env
+.env.local
+.env.production
+
+# Base de données
+*.db
+*.sqlite
+*.sqlite3
+database.sqlite
+
+# Logs
+*.log
+logs/
+error.log
+access.log
+
+# Fichiers temporaires
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Cache
+cache/
+*.cache
+
+# Sessions PHP
+sessions/
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*.old
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE/Editeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js (si vous utilisez des outils de build)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Composer (si vous l'utilisez)
+vendor/
+composer.lock
+
+# Fichiers de déploiement
+deploy.sh
+*.zip
+*.tar.gz
+
+# Fichiers de test
+test-*.php
+debug-*.php
+
+# Fichiers de configuration local
+config-local.php
+config-dev.php
