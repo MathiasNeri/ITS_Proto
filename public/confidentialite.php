@@ -1,5 +1,5 @@
 <?php
-require_once '../backend/config.php';
+require_once __DIR__ . '/../backend/config.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 $is_logged_in = checkAuth();
 $user_role = $_SESSION['user_role'] ?? '';

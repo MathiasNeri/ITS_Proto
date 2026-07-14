@@ -1,5 +1,5 @@
 <?php
-require_once '../backend/config.php';
+require_once __DIR__ . '/../backend/config.php';
 
 // Vérification de l'authentification
 if (session_status() === PHP_SESSION_NONE) {

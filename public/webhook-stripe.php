@@ -4,7 +4,7 @@
 // "checkout.session.completed"). C'est la confirmation de paiement fiable
 // en production : contrairement au retour navigateur (confirmation.php),
 // elle arrive même si le client ferme l'onglet avant la redirection.
-require_once '../backend/config.php';
+require_once __DIR__ . '/../backend/config.php';
 
 header('Content-Type: application/json');
 
