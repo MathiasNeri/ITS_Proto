@@ -13,29 +13,38 @@ if (checkAuth()) {
 $error = '';
 
 if ($_POST) {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    
-    if (empty($email) || empty($password)) {
-        $error = 'Tous les champs sont requis';
+    if (!csrfVerify()) {
+        $error = 'Session expirée, merci de réessayer.';
     } else {
-        try {
-            $pdo = initDatabase();
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch();
-            
-            if ($user && password_verify($password, $user['password'])) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_email'] = $user['email'];
-                $_SESSION['user_role'] = $user['role'];
-                redirect('accueil.php');
-            } else {
-                $error = 'Email ou mot de passe incorrect';
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            $error = 'Tous les champs sont requis';
+        } elseif (rateLimitDepasse($email)) {
+            $error = 'Trop de tentatives échouées. Merci de réessayer dans quelques minutes.';
+        } else {
+            try {
+                $pdo = initDatabase();
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
+
+                if ($user && password_verify($password, $user['password'])) {
+                    enregistrerTentativeConnexion($email, true);
+                    session_regenerate_id(true);
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_email'] = $user['email'];
+                    $_SESSION['user_role'] = $user['role'];
+                    redirect('accueil.php');
+                } else {
+                    enregistrerTentativeConnexion($email, false);
+                    $error = 'Email ou mot de passe incorrect';
+                }
+            } catch (PDOException $e) {
+                $error = 'Erreur de connexion';
+                logError($e->getMessage());
             }
-        } catch (PDOException $e) {
-            $error = 'Erreur de connexion';
-            logError($e->getMessage());
         }
     }
 }
@@ -44,7 +53,7 @@ if ($_POST) {
 
 <style>
     .login-page {
-        background: var(--darkreader-background-f0f0f0, #202325);
+        background: var(--bg);
         min-height: 100vh;
         display: flex;
         align-items: center;
@@ -53,7 +62,7 @@ if ($_POST) {
     }
     
     .login-container {
-        background: #2c3e50;
+        background: var(--surface);
         padding: 2rem;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -64,7 +73,7 @@ if ($_POST) {
     .login-title {
         text-align: center;
         margin-bottom: 2rem;
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 1.5rem;
     }
     
@@ -75,30 +84,30 @@ if ($_POST) {
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-weight: bold;
     }
     
     .form-group input {
         width: 100%;
         padding: 0.8rem;
-        border: 1px solid #34495e;
+        border: 1px solid var(--surface-alt);
         border-radius: 5px;
-        background: #34495e;
-        color: white;
+        background: var(--surface-alt);
+        color: var(--text);
         font-size: 1rem;
     }
     
     .form-group input:focus {
         outline: none;
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .btn-login {
         width: 100%;
         padding: 0.8rem;
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         border: none;
         border-radius: 5px;
         font-size: 1rem;
@@ -108,12 +117,12 @@ if ($_POST) {
     }
     
     .btn-login:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
     
     .error {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         padding: 1rem;
         border-radius: 5px;
         margin-bottom: 1rem;
@@ -126,7 +135,7 @@ if ($_POST) {
     }
     
     .register-link a {
-        color: #e74c3c;
+        color: var(--accent);
         text-decoration: none;
     }
     
@@ -145,20 +154,22 @@ if ($_POST) {
         <?php endif; ?>
         
         <form method="POST">
+            <?php echo csrfField(); ?>
             <div class="form-group">
                 <label for="email">Email :</label>
                 <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Mot de passe :</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            
+
             <button type="submit" class="btn-login">Se connecter</button>
         </form>
-        
+
         <div class="register-link">
+            <p><a href="mot-de-passe-oublie.php">Mot de passe oublié ?</a></p>
             <p>Pas encore de compte ? <a href="inscription.php">S'inscrire</a></p>
         </div>
     </div>

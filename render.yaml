@@ -1,0 +1,20 @@
+# Blueprint Render (https://render.com) : permet un déploiement en
+# quelques clics — "New +" > "Blueprint" > sélectionner ce repo GitHub.
+# Le plan free est suffisant pour une démo (le service s'endort après
+# 15 min d'inactivité et se réveille en ~30s au prochain accès).
+#
+# Limite du plan free à connaître : le disque n'est PAS persistant.
+# La base SQLite (donc commandes/comptes créés en ligne) est réinitialisée
+# à chaque redéploiement. Très bien pour montrer le site qui fonctionne,
+# pas pour y stocker de vraies commandes clients — voir MIGRATION_MYSQL.md
+# pour une base persistante en production.
+
+services:
+  - type: web
+    name: its-proto
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000

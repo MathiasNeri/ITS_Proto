@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Vérifier si l'utilisateur est connecté
 if (!checkAuth()) {
-    redirect('login.php');
+    redirect('connexion.php');
 }
 
 $user_email = $_SESSION['user_email'] ?? '';
@@ -18,47 +18,59 @@ $message = '';
 $error = '';
 
 if ($_POST) {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    
-    $new_email = trim($_POST['email'] ?? '');
-    $new_password = trim($_POST['password'] ?? '');
-    $confirm_password = trim($_POST['confirm_password'] ?? '');
-    
-    if (empty($new_email)) {
-        $error = 'L\'email est requis';
-    } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Format d\'email invalide';
-    } elseif (!empty($new_password) && $new_password !== $confirm_password) {
-        $error = 'Les mots de passe ne correspondent pas';
+    if (!csrfVerify()) {
+        $error = 'Session expirée, merci de réessayer.';
     } else {
-        try {
-            $pdo = new PDO($config['db_path']);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            
-            // Vérifier si l'email existe déjà
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
-            $stmt->execute([$new_email, $_SESSION['user_id']]);
-            if ($stmt->fetch()) {
-                $error = 'Cet email est déjà utilisé';
-            } else {
-                // Mettre à jour le profil
-                if (!empty($new_password)) {
-                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("UPDATE users SET email = ?, password = ? WHERE id = ?");
-                    $stmt->execute([$new_email, $hashed_password, $_SESSION['user_id']]);
+        $current_password = $_POST['current_password'] ?? '';
+        $new_email = trim($_POST['email'] ?? '');
+        $new_password = trim($_POST['password'] ?? '');
+        $confirm_password = trim($_POST['confirm_password'] ?? '');
+
+        if (empty($current_password)) {
+            $error = 'Merci de saisir votre mot de passe actuel pour confirmer les changements';
+        } elseif (empty($new_email)) {
+            $error = 'L\'email est requis';
+        } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Format d\'email invalide';
+        } elseif (!empty($new_password) && strlen($new_password) < 6) {
+            $error = 'Le nouveau mot de passe doit contenir au moins 6 caractères';
+        } elseif (!empty($new_password) && $new_password !== $confirm_password) {
+            $error = 'Les mots de passe ne correspondent pas';
+        } else {
+            try {
+                $pdo = initDatabase();
+
+                $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
+                $stmt->execute([$_SESSION['user_id']]);
+                $currentUser = $stmt->fetch();
+
+                if (!$currentUser || !password_verify($current_password, $currentUser['password'])) {
+                    $error = 'Mot de passe actuel incorrect';
                 } else {
-                    $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+                    // Vérifier si l'email existe déjà
+                    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
                     $stmt->execute([$new_email, $_SESSION['user_id']]);
+                    if ($stmt->fetch()) {
+                        $error = 'Cet email est déjà utilisé';
+                    } else {
+                        // Mettre à jour le profil
+                        if (!empty($new_password)) {
+                            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                            $stmt = $pdo->prepare("UPDATE users SET email = ?, password = ? WHERE id = ?");
+                            $stmt->execute([$new_email, $hashed_password, $_SESSION['user_id']]);
+                        } else {
+                            $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+                            $stmt->execute([$new_email, $_SESSION['user_id']]);
+                        }
+
+                        $_SESSION['user_email'] = $new_email;
+                        $message = 'Profil mis à jour avec succès';
+                    }
                 }
-                
-                $_SESSION['user_email'] = $new_email;
-                $message = 'Profil mis à jour avec succès';
+            } catch (PDOException $e) {
+                $error = 'Erreur lors de la mise à jour du profil';
+                logError($e->getMessage());
             }
-        } catch (PDOException $e) {
-            $error = 'Erreur lors de la mise à jour du profil';
-            logError($e->getMessage());
         }
     }
 }
@@ -73,16 +85,16 @@ if ($_POST) {
     }
     
     .profile-card {
-        background: #2c3e50;
+        background: var(--surface);
         padding: 2rem;
         border-radius: 10px;
-        border: 2px solid #34495e;
+        border: 2px solid var(--surface-alt);
     }
     
     .profile-title {
         font-size: 2rem;
         margin-bottom: 2rem;
-        color: #e74c3c;
+        color: var(--accent);
         text-align: center;
     }
     
@@ -93,28 +105,28 @@ if ($_POST) {
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-weight: bold;
     }
     
     .form-group input {
         width: 100%;
         padding: 0.8rem;
-        border: 2px solid #34495e;
+        border: 2px solid var(--surface-alt);
         border-radius: 5px;
-        background: #1a1a1a;
-        color: white;
+        background: var(--surface-deep);
+        color: var(--text);
         font-size: 1rem;
     }
     
     .form-group input:focus {
         outline: none;
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .btn {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         padding: 1rem 2rem;
         border: none;
         border-radius: 5px;
@@ -127,18 +139,18 @@ if ($_POST) {
     }
     
     .btn:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
     
     .btn-secondary {
-        background: #3498db;
+        background: var(--accent-2);
         text-decoration: none;
         display: inline-block;
         text-align: center;
     }
     
     .btn-secondary:hover {
-        background: #2980b9;
+        background: var(--accent-2-hover);
     }
     
     .message {
@@ -149,29 +161,29 @@ if ($_POST) {
     }
     
     .message.success {
-        background: #27ae60;
-        color: white;
+        background: var(--success);
+        color: var(--text);
     }
     
     .message.error {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
     }
     
     .user-info {
-        background: #34495e;
+        background: var(--surface-alt);
         padding: 1.5rem;
         border-radius: 5px;
         margin-bottom: 2rem;
     }
     
     .user-info h3 {
-        color: #e74c3c;
+        color: var(--accent);
         margin-bottom: 1rem;
     }
     
     .user-info p {
-        color: #bdc3c7;
+        color: var(--text-muted);
         margin-bottom: 0.5rem;
     }
 </style>
@@ -196,25 +208,32 @@ if ($_POST) {
             </div>
             
             <form method="POST">
+                <?php echo csrfField(); ?>
                 <div class="form-group">
                     <label for="email">Nouvel email :</label>
                     <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user_email); ?>" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="password">Nouveau mot de passe (laisser vide pour ne pas changer) :</label>
                     <input type="password" id="password" name="password">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="confirm_password">Confirmer le nouveau mot de passe :</label>
                     <input type="password" id="confirm_password" name="confirm_password">
                 </div>
-                
+
+                <div class="form-group">
+                    <label for="current_password">Mot de passe actuel (pour confirmer) :</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
+
                 <button type="submit" class="btn">Mettre à jour le profil</button>
             </form>
-            
-            <a href="accueil.php" class="btn btn-secondary">Retour à l'accueil</a>
+
+            <a href="mes-commandes.php" class="btn btn-secondary">Mes commandes</a>
+            <a href="accueil.php" class="btn btn-secondary" style="margin-top: .6rem;">Retour à l'accueil</a>
         </div>
     </div>
 </main>

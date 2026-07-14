@@ -19,7 +19,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     .page-title {
         font-size: 2.5rem;
         margin-bottom: 2rem;
-        color: #e74c3c;
+        color: var(--accent);
         text-align: center;
     }
     
@@ -31,8 +31,8 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .pricing-card {
-        background: #2c3e50;
-        border: 2px solid #34495e;
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
         border-radius: 12px;
         padding: 2rem;
         text-align: center;
@@ -41,30 +41,30 @@ $user_role = $_SESSION['user_role'] ?? '';
     
     .pricing-card:hover {
         transform: translateY(-3px);
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .pricing-card.featured {
-        border-color: #e74c3c;
+        border-color: var(--accent);
         transform: scale(1.05);
     }
     
     .service-name {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #e74c3c;
+        color: var(--accent);
         margin-bottom: 1rem;
     }
     
     .price {
         font-size: 2rem;
         font-weight: bold;
-        color: white;
+        color: var(--text);
         margin-bottom: 1rem;
     }
     
     .price-note {
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-size: 0.9rem;
         margin-bottom: 1.5rem;
     }
@@ -76,9 +76,9 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .features li {
-        color: #bdc3c7;
+        color: var(--text-muted);
         padding: 0.5rem 0;
-        border-bottom: 1px solid #34495e;
+        border-bottom: 1px solid var(--surface-alt);
     }
     
     .features li:last-child {
@@ -86,8 +86,8 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .cta-btn {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         padding: 1rem 2rem;
         border: none;
         border-radius: 8px;
@@ -100,11 +100,11 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .cta-btn:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
     
     .info-section {
-        background: #34495e;
+        background: var(--surface-alt);
         border-radius: 8px;
         padding: 2rem;
         margin-top: 3rem;
@@ -112,13 +112,13 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .info-title {
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 1.5rem;
         margin-bottom: 1rem;
     }
     
     .info-text {
-        color: #bdc3c7;
+        color: var(--text-muted);
         line-height: 1.6;
     }
 </style>

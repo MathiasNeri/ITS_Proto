@@ -1,0 +1,255 @@
+<?php
+require_once '../backend/config.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$is_logged_in = checkAuth();
+$user_role = $_SESSION['user_role'] ?? '';
+
+$pdo = initDatabase();
+$cart = (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) ? $_SESSION['cart'] : [];
+
+$lignes = [];
+$total = 0;
+
+if (!empty($cart)) {
+    $ids = array_map('intval', array_keys($cart));
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $pdo->prepare("SELECT * FROM produits WHERE id IN ($placeholders)");
+    $stmt->execute($ids);
+    $produits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $produitsById = [];
+    foreach ($produits as $p) {
+        $produitsById[$p['id']] = $p;
+    }
+
+    foreach ($cart as $id => $qty) {
+        if (!isset($produitsById[$id])) {
+            continue;
+        }
+        $p = $produitsById[$id];
+        $sousTotal = $p['prix'] * $qty;
+        $total += $sousTotal;
+        $lignes[] = [
+            'id' => $id,
+            'produit' => $p,
+            'qty' => $qty,
+            'sous_total' => $sousTotal,
+        ];
+    }
+}
+?>
+<?php include 'header.php'; ?>
+
+<style>
+    .page-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+        color: var(--accent);
+        text-align: center;
+    }
+
+    .cart-card {
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .cart-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--surface-alt);
+    }
+
+    .cart-row:last-child {
+        border-bottom: none;
+    }
+
+    .cart-thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 8px;
+        background: var(--surface-alt);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        flex-shrink: 0;
+    }
+
+    .cart-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cart-info .cn {
+        font-weight: bold;
+        color: var(--text);
+    }
+
+    .cart-info .cp {
+        color: var(--text-muted);
+        font-size: .85rem;
+    }
+
+    .qty-form {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .qty-form input[type="number"] {
+        width: 56px;
+        padding: .4rem;
+        text-align: center;
+        border: 1px solid var(--surface-alt);
+        border-radius: 6px;
+        background: var(--surface-alt);
+        color: var(--text);
+    }
+
+    .qty-form button {
+        background: var(--accent-2);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: .5rem .8rem;
+        font-size: .75rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .qty-form button:hover {
+        background: var(--accent-2-hover);
+    }
+
+    .cart-sous-total {
+        min-width: 90px;
+        text-align: right;
+        font-weight: bold;
+        color: var(--text);
+    }
+
+    .cart-remove {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-weight: bold;
+        font-size: .8rem;
+        cursor: pointer;
+    }
+
+    .cart-empty {
+        text-align: center;
+        padding: 3rem 0;
+        color: var(--text-muted);
+    }
+
+    .cart-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: var(--text);
+        margin-bottom: 1.5rem;
+    }
+
+    .checkout-btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 1rem;
+        font-size: 1.05rem;
+        font-weight: bold;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .checkout-btn:hover {
+        background: var(--accent-hover);
+    }
+
+    .checkout-btn.disabled {
+        background: var(--surface-alt);
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+
+    .continue-link {
+        display: block;
+        text-align: center;
+        margin-top: 1rem;
+        color: var(--accent-2);
+        text-decoration: none;
+        font-weight: bold;
+    }
+</style>
+
+<main class="main-content">
+    <div class="page-container">
+        <h1 class="page-title">🛒 MON PANIER</h1>
+
+        <div class="cart-card">
+            <?php if (empty($lignes)): ?>
+                <div class="cart-empty">Votre panier est vide.<br>Direction la <a href="boutique.php" style="color: var(--accent-2);">boutique</a> !</div>
+            <?php else: ?>
+                <?php foreach ($lignes as $ligne): ?>
+                    <div class="cart-row">
+                        <div class="cart-thumb"><?php echo $ligne['produit']['icone']; ?></div>
+                        <div class="cart-info">
+                            <div class="cn"><?php echo htmlspecialchars($ligne['produit']['nom']); ?></div>
+                            <div class="cp"><?php echo number_format($ligne['produit']['prix'], 2, ',', ' '); ?> € / unité</div>
+                            <?php if ($ligne['qty'] > (int) $ligne['produit']['stock']): ?>
+                                <div class="cp" style="color: var(--accent);">Stock insuffisant, quantité à ajuster</div>
+                            <?php endif; ?>
+                        </div>
+                        <form method="POST" action="cart_action.php" class="qty-form">
+                            <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="update">
+                            <input type="hidden" name="produit_id" value="<?php echo (int) $ligne['id']; ?>">
+                            <input type="hidden" name="redirect" value="panier.php">
+                            <input type="number" name="qty" min="1" max="<?php echo (int) $ligne['produit']['stock']; ?>" value="<?php echo (int) $ligne['qty']; ?>">
+                            <button type="submit">Maj</button>
+                        </form>
+                        <div class="cart-sous-total"><?php echo number_format($ligne['sous_total'], 2, ',', ' '); ?> €</div>
+                        <form method="POST" action="cart_action.php">
+                            <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="remove">
+                            <input type="hidden" name="produit_id" value="<?php echo (int) $ligne['id']; ?>">
+                            <input type="hidden" name="redirect" value="panier.php">
+                            <button type="submit" class="cart-remove">Suppr.</button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <?php if (!empty($lignes)): ?>
+            <div class="cart-summary">
+                <span>Total</span>
+                <span><?php echo number_format($total, 2, ',', ' '); ?> €</span>
+            </div>
+            <a href="commande.php" class="checkout-btn">Passer commande</a>
+        <?php else: ?>
+            <a href="boutique.php" class="checkout-btn">Retour à la boutique</a>
+        <?php endif; ?>
+    </div>
+</main>
+
+<?php include 'footer.php'; ?>

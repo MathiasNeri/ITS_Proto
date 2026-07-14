@@ -8,6 +8,10 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # Page d'accueil
 DirectoryIndex index.php
 
+# Pages d'erreur personnalisées
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+
 # Sécurité - Masquer les fichiers sensibles
 <Files "*.sqlite">
     Order Allow,Deny

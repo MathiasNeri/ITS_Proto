@@ -13,7 +13,9 @@ if (checkAuth()) {
 $error = '';
 $success = '';
 
-if ($_POST) {
+if ($_POST && !csrfVerify()) {
+    $error = 'Session expirée, merci de réessayer.';
+} elseif ($_POST) {
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -29,10 +31,13 @@ if ($_POST) {
         $error = 'Le mot de passe doit contenir au moins 6 caractères';
     } elseif ($password !== $confirm_password) {
         $error = 'Les mots de passe ne correspondent pas';
+    } elseif (rateLimitDepasse('inscription:' . clientIp(), 5, 60)) {
+        $error = 'Trop de tentatives d\'inscription depuis cette connexion. Merci de réessayer plus tard.';
     } else {
         try {
             $pdo = initDatabase();
-            
+            enregistrerTentativeConnexion('inscription:' . clientIp(), false);
+
             // Vérifier si l'email existe déjà
             $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
             $stmt->execute([$email]);
@@ -43,7 +48,7 @@ if ($_POST) {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("INSERT INTO users (nom, prenom, email, password, role) VALUES (?, ?, ?, ?, 'user')");
                 $stmt->execute([$nom, $prenom, $email, $hashed_password]);
-                
+
                 $success = 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.';
             }
         } catch (PDOException $e) {
@@ -57,7 +62,7 @@ if ($_POST) {
 
 <style>
     .register-page {
-        background: var(--darkreader-background-f0f0f0, #202325);
+        background: var(--bg);
         min-height: 100vh;
         display: flex;
         align-items: center;
@@ -66,7 +71,7 @@ if ($_POST) {
     }
     
     .register-container {
-        background: #2c3e50;
+        background: var(--surface);
         padding: 2rem;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -77,7 +82,7 @@ if ($_POST) {
     .register-title {
         text-align: center;
         margin-bottom: 2rem;
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 1.5rem;
     }
     
@@ -88,30 +93,30 @@ if ($_POST) {
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-weight: bold;
     }
     
     .form-group input {
         width: 100%;
         padding: 0.8rem;
-        border: 1px solid #34495e;
+        border: 1px solid var(--surface-alt);
         border-radius: 5px;
-        background: #34495e;
-        color: white;
+        background: var(--surface-alt);
+        color: var(--text);
         font-size: 1rem;
     }
     
     .form-group input:focus {
         outline: none;
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .btn-register {
         width: 100%;
         padding: 0.8rem;
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         border: none;
         border-radius: 5px;
         font-size: 1rem;
@@ -121,12 +126,12 @@ if ($_POST) {
     }
     
     .btn-register:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
     
     .error {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         padding: 1rem;
         border-radius: 5px;
         margin-bottom: 1rem;
@@ -134,8 +139,8 @@ if ($_POST) {
     }
     
     .success {
-        background: #27ae60;
-        color: white;
+        background: var(--success);
+        color: var(--text);
         padding: 1rem;
         border-radius: 5px;
         margin-bottom: 1rem;
@@ -148,7 +153,7 @@ if ($_POST) {
     }
     
     .login-link a {
-        color: #e74c3c;
+        color: var(--accent);
         text-decoration: none;
     }
     
@@ -171,6 +176,7 @@ if ($_POST) {
         <?php endif; ?>
         
         <form method="POST">
+            <?php echo csrfField(); ?>
             <div class="form-group">
                 <label for="nom">Nom :</label>
                 <input type="text" id="nom" name="nom" value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>" required>

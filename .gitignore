@@ -1,5 +1,6 @@
 # Fichiers de configuration sensibles
-config.php
+# NB : backend/config.php n'est PAS ignoré : il ne contient plus aucun
+# secret en dur (tout passe par variables d'environnement, voir le fichier).
 .env
 .env.local
 .env.production

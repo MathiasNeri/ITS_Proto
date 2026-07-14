@@ -7,46 +7,12 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $is_logged_in = checkAuth();
 $user_role = $_SESSION['user_role'] ?? '';
-
-// Traitement du formulaire RDV
-$success = '';
-$error = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
-    $nom = trim($_POST['nom'] ?? '');
-    $prenom = trim($_POST['prenom'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $telephone = trim($_POST['telephone'] ?? '');
-    $boutique = $_POST['boutique'] ?? '';
-    $service = $_POST['service'] ?? '';
-    $date = $_POST['date'] ?? '';
-    $message = trim($_POST['message'] ?? '');
-    
-    // Validation
-    if (empty($nom) || empty($prenom) || empty($email) || empty($telephone) || empty($boutique) || empty($service) || empty($date)) {
-        $error = 'Tous les champs obligatoires doivent être remplis';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Email invalide';
-    } else {
-        $pdo = initDatabase();
-        
-        // Sauvegarde en base
-        $stmt = $pdo->prepare("INSERT INTO rdv (nom, prenom, email, telephone, boutique, service, date_rdv, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        
-        if ($stmt->execute([$nom, $prenom, $email, $telephone, $boutique, $service, $date, $message])) {
-            $success = 'Votre demande de rendez-vous a été envoyée avec succès !';
-        } else {
-            $error = 'Erreur lors de l\'envoi de la demande';
-        }
-    }
-}
 ?>
 <?php include 'header.php'; ?>
 
 <style>
     /* Hero Section */
     .hero {
-        margin-top: 80px;
         height: 60vh;
         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
                     url('images/hero-bg.jpg');
@@ -81,10 +47,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .hero-text {
         font-size: 1.5rem;
         margin-bottom: 2rem;
-        color: white;
+        /* Toujours sur la photo assombrie du hero : reste blanc dans les deux thèmes */
+        color: #ffffff;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
     }
-    
+
+    .typing-line {
+        display: inline-block;
+    }
+
+    #typedWord {
+        text-transform: uppercase;
+    }
+
+    .typing-caret {
+        display: inline-block;
+        color: inherit;
+        margin-left: 1px;
+        animation: caretBlink 1s step-end infinite;
+    }
+
+    @keyframes caretBlink {
+        from, to { opacity: 1; }
+        50% { opacity: 0; }
+    }
+
     /* Main Content */
     .main-content {
         padding: 4rem 2rem;
@@ -97,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         font-size: 2rem;
         font-weight: bold;
         margin-bottom: 3rem;
-        color: white;
+        color: var(--text);
     }
     
     .services-grid {
@@ -108,8 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     }
     
     .service-card {
-        background: #2c3e50;
-        border: 2px solid #34495e;
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
         border-radius: 12px;
         padding: 2rem 1.5rem;
         text-align: center;
@@ -118,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     
     .service-card:hover {
         transform: translateY(-3px);
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .service-icon {
@@ -133,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .service-title {
         font-size: 1.1rem;
         font-weight: bold;
-        color: white;
+        color: var(--text);
     }
     
     /* OS Support */
@@ -167,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     
     .os-title {
         font-size: 0.9rem;
-        color: white;
+        color: var(--text);
         font-weight: 500;
     }
     
@@ -189,9 +176,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     
     .action-btn {
         background: transparent;
-        color: white;
+        color: var(--text);
         padding: 1rem 2rem;
-        border: 2px solid #3498db;
+        border: 2px solid var(--accent-2);
         border-radius: 8px;
         font-size: 1rem;
         font-weight: bold;
@@ -202,16 +189,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     }
     
     .action-btn:hover {
-        background: #3498db;
+        background: var(--accent-2);
         transform: translateY(-2px);
     }
     
     .action-btn.primary {
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .action-btn.primary:hover {
-        background: #e74c3c;
+        background: var(--accent);
     }
     
     /* Sections */
@@ -220,13 +207,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .contact-section {
         padding: 3rem 0;
         text-align: center;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--divider);
     }
     
     .tarifs-section h2,
     .rdv-section h2,
     .contact-section h2 {
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 2rem;
         margin-bottom: 1rem;
     }
@@ -234,43 +221,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .tarifs-section p,
     .rdv-section p,
     .contact-section p {
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-size: 1.1rem;
-    }
-    
-    /* Cookie Banner */
-    .cookie-banner {
-        background: #333;
-        padding: 1rem 2rem;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .cookie-text {
-        color: white;
-        font-size: 0.9rem;
-        flex: 1;
-        margin-right: 2rem;
-    }
-    
-    .cookie-btn {
-        background: #3498db;
-        color: white;
-        padding: 0.5rem 1.5rem;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-    
-    .cookie-btn:hover {
-        background: #2980b9;
     }
     
     /* Responsive */
@@ -278,20 +230,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         .services-grid {
             grid-template-columns: repeat(2, 1fr);
         }
-        
+
         .os-grid {
             grid-template-columns: repeat(3, 1fr);
         }
-        
+
         .action-buttons {
             flex-direction: column;
             align-items: center;
-        }
-        
-        .cookie-banner {
-            flex-direction: column;
-            gap: 1rem;
-            text-align: center;
         }
     }
     
@@ -310,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
 <section class="hero" id="accueil">
     <div class="hero-content">
         <?php if ($is_logged_in): ?>
-            <div class="hero-text" style="color: #3498db; font-size: 1.2rem; margin-bottom: 1rem;">
+            <div class="hero-text" style="color: var(--accent-2); font-size: 1.2rem; margin-bottom: 1rem;">
                 Bienvenue, <?php echo htmlspecialchars($_SESSION['user_email'] ?? 'Utilisateur'); ?> !
             </div>
         <?php endif; ?>
@@ -323,7 +269,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
 <!-- Main Content -->
 <main class="main-content">
     <h1 class="main-title">
-        RÉP | INFORMATIQUE ET TÉLÉPHONIE - TOUTES MARQUES<br>
+        <span class="typing-line"><span id="typedWord"></span><span class="typing-caret">|</span></span><br>
+        INFORMATIQUE ET TÉLÉPHONIE - TOUTES MARQUES<br>
         PRODUITS NEUFS - RECONDITIONNÉS - OCCASIONS
     </h1>
     
@@ -441,15 +388,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         </div>
     </div>
     
-    <!-- Cookie Banner -->
-    <div class="cookie-banner">
-        <div class="cookie-text">
-            Afin de vous proposer l'expérience de navigation la plus personnalisée possible, nous utilisons des cookies. 
-            Merci de cliquer sur le bouton OK pour donner votre accord. Vous pouvez changer d'avis et modifier vos choix à tout moment.
-        </div>
-        <button class="cookie-btn" onclick="this.parentElement.style.display='none'">Ok</button>
-    </div>
-
     <script>
         // Navigation fluide
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -464,6 +402,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
                 }
             });
         });
+
+        // Machine à écrire : tape puis efface chaque mot en boucle,
+        // avec une vitesse légèrement aléatoire pour un rendu manuel.
+        (function () {
+            var words = ['Vente', 'Réparation'];
+            var el = document.getElementById('typedWord');
+            if (!el) {
+                return;
+            }
+
+            var wordIndex = 0;
+            var charIndex = 0;
+            var deleting = false;
+
+            function randDelay(min, max) {
+                return min + Math.random() * (max - min);
+            }
+
+            function tick() {
+                var currentWord = words[wordIndex];
+
+                if (!deleting) {
+                    charIndex++;
+                    el.textContent = currentWord.slice(0, charIndex);
+                    if (charIndex === currentWord.length) {
+                        deleting = true;
+                        setTimeout(tick, 1500);
+                        return;
+                    }
+                    setTimeout(tick, randDelay(80, 180));
+                } else {
+                    charIndex--;
+                    el.textContent = currentWord.slice(0, charIndex);
+                    if (charIndex === 0) {
+                        deleting = false;
+                        wordIndex = (wordIndex + 1) % words.length;
+                        setTimeout(tick, 400);
+                        return;
+                    }
+                    setTimeout(tick, randDelay(35, 90));
+                }
+            }
+
+            tick();
+        })();
     </script>
 </main>
 

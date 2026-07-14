@@ -10,21 +10,122 @@ if (!checkAuth() || $_SESSION['user_role'] !== 'admin') {
     redirect('connexion.php');
 }
 
-// Traitement des actions
+$pdo = initDatabase();
+
+$categories = [
+    'tel'   => 'Téléphones',
+    'pc'    => 'Ordinateurs',
+    'tab'   => 'Tablettes',
+    'piece' => 'Pièces détachées',
+    'acc'   => 'Accessoires',
+];
+$tags = [
+    'neuf'     => 'Neuf',
+    'recond'   => 'Reconditionné',
+    'occasion' => 'Occasion',
+    'promo'    => 'Promo',
+];
+$statuts = [
+    'en_attente_paiement' => 'En attente de paiement',
+    'nouvelle'            => 'Nouvelle (payée)',
+    'preparation'         => 'En préparation',
+    'expediee'            => 'Expédiée',
+    'livree'              => 'Livrée / retirée',
+    'annulee'             => 'Annulée',
+];
+
 $message = '';
 $error = '';
 
 if ($_POST) {
-    $action = $_POST['action'] ?? '';
-    
-    if ($action === 'delete_rdv' && isset($_POST['rdv_id'])) {
+    if (!csrfVerify()) {
+        $error = 'Session expirée, merci de réessayer.';
+    } else {
+        $action = $_POST['action'] ?? '';
+
         try {
-            $pdo = initDatabase();
-            $stmt = $pdo->prepare("DELETE FROM rdv WHERE id = ?");
-            $stmt->execute([$_POST['rdv_id']]);
-            $message = 'Rendez-vous supprimé avec succès';
+            if ($action === 'delete_rdv' && isset($_POST['rdv_id'])) {
+                $pdo->prepare('DELETE FROM rdv WHERE id = ?')->execute([$_POST['rdv_id']]);
+                $message = 'Rendez-vous supprimé avec succès';
+            } elseif ($action === 'update_statut' && isset($_POST['commande_id'], $_POST['statut'])) {
+                if (array_key_exists($_POST['statut'], $statuts)) {
+                    $pdo->prepare('UPDATE commandes SET statut = ? WHERE id = ?')->execute([$_POST['statut'], $_POST['commande_id']]);
+                    $message = 'Statut de la commande mis à jour';
+                }
+            } elseif ($action === 'update_suivi' && isset($_POST['commande_id'])) {
+                $pdo->prepare('UPDATE commandes SET numero_suivi = ? WHERE id = ?')
+                    ->execute([trim($_POST['numero_suivi'] ?? ''), $_POST['commande_id']]);
+                $message = 'Numéro de suivi enregistré';
+            } elseif ($action === 'add_promo') {
+                $code = strtoupper(trim($_POST['code'] ?? ''));
+                $type = ($_POST['type'] ?? '') === 'montant' ? 'montant' : 'pourcentage';
+                $valeur = (float) ($_POST['valeur'] ?? 0);
+                $usageMax = trim($_POST['usage_max'] ?? '') !== '' ? (int) $_POST['usage_max'] : null;
+                $dateExpiration = trim($_POST['date_expiration'] ?? '') !== '' ? $_POST['date_expiration'] : null;
+
+                if ($code === '' || $valeur <= 0) {
+                    $error = 'Code et valeur requis';
+                } else {
+                    $pdo->prepare('INSERT INTO codes_promo (code, type, valeur, usage_max, date_expiration) VALUES (?, ?, ?, ?, ?)')
+                        ->execute([$code, $type, $valeur, $usageMax, $dateExpiration]);
+                    $message = 'Code promo créé';
+                }
+            } elseif ($action === 'toggle_promo' && isset($_POST['promo_id'])) {
+                $pdo->prepare('UPDATE codes_promo SET actif = 1 - actif WHERE id = ?')->execute([$_POST['promo_id']]);
+                $message = 'Code promo mis à jour';
+            } elseif ($action === 'delete_promo' && isset($_POST['promo_id'])) {
+                $pdo->prepare('DELETE FROM codes_promo WHERE id = ?')->execute([$_POST['promo_id']]);
+                $message = 'Code promo supprimé';
+            } elseif ($action === 'approve_avis' && isset($_POST['avis_id'])) {
+                $pdo->prepare('UPDATE avis SET approuve = 1 WHERE id = ?')->execute([$_POST['avis_id']]);
+                $message = 'Avis publié';
+            } elseif ($action === 'delete_avis' && isset($_POST['avis_id'])) {
+                $pdo->prepare('DELETE FROM avis WHERE id = ?')->execute([$_POST['avis_id']]);
+                $message = 'Avis supprimé';
+            } elseif ($action === 'add_produit') {
+                $nom = trim($_POST['nom'] ?? '');
+                $categorie = $_POST['categorie'] ?? '';
+                $icone = trim($_POST['icone'] ?? '📦') ?: '📦';
+                $prix = (float) ($_POST['prix'] ?? 0);
+                $prixBarre = trim($_POST['prix_barre'] ?? '') !== '' ? (float) $_POST['prix_barre'] : null;
+                $tag = $_POST['tag'] ?? 'neuf';
+                $etoiles = max(1, min(5, (int) ($_POST['etoiles'] ?? 5)));
+                $description = trim($_POST['description'] ?? '');
+                $stock = max(0, (int) ($_POST['stock'] ?? 0));
+
+                if ($nom === '' || !array_key_exists($categorie, $categories) || $prix <= 0) {
+                    $error = 'Merci de remplir correctement le nom, la catégorie et le prix du produit';
+                } else {
+                    $pdo->prepare('INSERT INTO produits (nom, categorie, icone, prix, prix_barre, tag, etoiles, description, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                        ->execute([$nom, $categorie, $icone, $prix, $prixBarre, $tag, $etoiles, $description, $stock]);
+                    $message = 'Produit ajouté au catalogue';
+                }
+            } elseif ($action === 'edit_produit' && isset($_POST['produit_id'])) {
+                $nom = trim($_POST['nom'] ?? '');
+                $prix = (float) ($_POST['prix'] ?? 0);
+                $prixBarre = trim($_POST['prix_barre'] ?? '') !== '' ? (float) $_POST['prix_barre'] : null;
+                $tag = $_POST['tag'] ?? 'neuf';
+                $stock = max(0, (int) ($_POST['stock'] ?? 0));
+
+                if ($nom === '' || $prix <= 0) {
+                    $error = 'Nom et prix invalides';
+                } else {
+                    $pdo->prepare('UPDATE produits SET nom = ?, prix = ?, prix_barre = ?, tag = ?, stock = ? WHERE id = ?')
+                        ->execute([$nom, $prix, $prixBarre, $tag, $stock, $_POST['produit_id']]);
+                    $message = 'Produit mis à jour';
+                }
+            } elseif ($action === 'delete_produit' && isset($_POST['produit_id'])) {
+                $pdo->prepare('DELETE FROM produits WHERE id = ?')->execute([$_POST['produit_id']]);
+                $message = 'Produit supprimé';
+            } elseif ($action === 'delete_message' && isset($_POST['message_id'])) {
+                $pdo->prepare('DELETE FROM messages WHERE id = ?')->execute([$_POST['message_id']]);
+                $message = 'Message supprimé';
+            } elseif ($action === 'mark_message_lu' && isset($_POST['message_id'])) {
+                $pdo->prepare('UPDATE messages SET lu = 1 WHERE id = ?')->execute([$_POST['message_id']]);
+                $message = 'Message marqué comme lu';
+            }
         } catch (PDOException $e) {
-            $error = 'Erreur lors de la suppression';
+            $error = 'Erreur lors du traitement de l\'action';
             logError($e->getMessage());
         }
     }
@@ -32,150 +133,319 @@ if ($_POST) {
 
 // Récupérer les données
 try {
-    $pdo = initDatabase();
-    
-    // Rendez-vous
-    $stmt = $pdo->query("SELECT * FROM rdv ORDER BY created_at DESC");
-    $rdv_list = $stmt->fetchAll();
-    
-    // Utilisateurs
-    $stmt = $pdo->query("SELECT * FROM users ORDER BY created_at DESC");
-    $users_list = $stmt->fetchAll();
-    
+    $rdv_list = $pdo->query('SELECT * FROM rdv ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $users_list = $pdo->query('SELECT * FROM users ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $produits_list = $pdo->query('SELECT * FROM produits ORDER BY id DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $commandes_list = $pdo->query('SELECT * FROM commandes ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $messages_list = $pdo->query('SELECT * FROM messages ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $emails_list = $pdo->query('SELECT * FROM emails_log ORDER BY created_at DESC LIMIT 100')->fetchAll(PDO::FETCH_ASSOC);
+    $promos_list = $pdo->query('SELECT * FROM codes_promo ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $avis_list = $pdo->query('SELECT a.*, p.nom AS produit_nom FROM avis a LEFT JOIN produits p ON p.id = a.produit_id ORDER BY a.created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+
+    $stmtLignes = $pdo->prepare('SELECT * FROM commande_lignes WHERE commande_id = ?');
+    $lignesParCommande = [];
+    foreach ($commandes_list as $c) {
+        $stmtLignes->execute([$c['id']]);
+        $lignesParCommande[$c['id']] = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
+    }
 } catch (PDOException $e) {
     $error = 'Erreur lors du chargement des données';
     logError($e->getMessage());
+    $rdv_list = $users_list = $produits_list = $commandes_list = $messages_list = $emails_list = $promos_list = $avis_list = [];
+    $lignesParCommande = [];
 }
+
+$is_logged_in = true;
+$user_role = 'admin';
+$messagesNonLus = count(array_filter($messages_list, function ($m) { return (int) $m['lu'] === 0; }));
 ?>
 <?php include 'header.php'; ?>
 
 <style>
     .admin-container {
-        max-width: 1200px;
+        max-width: 1240px;
         margin: 2rem auto;
         padding: 0 2rem;
     }
-    
+
     .admin-title {
         font-size: 2rem;
-        margin-bottom: 2rem;
-        color: #e74c3c;
+        margin-bottom: 1.5rem;
+        color: var(--accent);
         text-align: center;
     }
-    
-    .admin-grid {
+
+    .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-        gap: 2rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.6rem;
     }
-    
+
+    .stat-card {
+        background: var(--surface-alt);
+        padding: 1.2rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: var(--accent);
+    }
+
+    .stat-label {
+        color: var(--text-muted);
+        margin-top: 0.4rem;
+        font-size: .82rem;
+    }
+
+    .tabs {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--surface-alt);
+        margin-bottom: 1.6rem;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-weight: bold;
+        font-size: .85rem;
+        padding: .7rem 1rem;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+    }
+
+    .tab-btn.active {
+        color: var(--accent-2);
+        border-bottom-color: var(--accent-2);
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
     .admin-card {
-        background: #2c3e50;
-        padding: 2rem;
+        background: var(--surface);
+        padding: 1.6rem;
         border-radius: 10px;
-        border: 2px solid #34495e;
+        border: 2px solid var(--surface-alt);
+        margin-bottom: 1.5rem;
     }
-    
+
     .card-title {
-        font-size: 1.3rem;
+        font-size: 1.15rem;
         margin-bottom: 1rem;
-        color: #e74c3c;
+        color: var(--accent);
     }
-    
+
     .data-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 1rem;
+        margin-top: .5rem;
+        font-size: .85rem;
     }
-    
+
     .data-table th,
     .data-table td {
-        padding: 0.8rem;
+        padding: 0.65rem;
         text-align: left;
-        border-bottom: 1px solid #34495e;
+        border-bottom: 1px solid var(--surface-alt);
+        vertical-align: middle;
     }
-    
+
     .data-table th {
-        background: #34495e;
-        color: #e74c3c;
+        background: var(--surface-alt);
+        color: var(--accent);
         font-weight: bold;
     }
-    
+
     .data-table td {
-        color: #bdc3c7;
+        color: var(--text-muted);
     }
-    
+
+    .table-scroll {
+        overflow-x: auto;
+    }
+
     .btn-delete {
-        background: #e74c3c;
-        color: white;
-        padding: 0.5rem 1rem;
+        background: var(--accent);
+        color: #fff;
+        padding: 0.4rem 0.8rem;
         border: none;
         border-radius: 3px;
         cursor: pointer;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
     }
-    
+
     .btn-delete:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
-    
-    .message {
+
+    .btn-small {
+        background: var(--accent-2);
+        color: #fff;
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+
+    .btn-small:hover {
+        background: var(--accent-2-hover);
+    }
+
+    .inline-form {
+        display: flex;
+        gap: .3rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .inline-form input,
+    .inline-form select {
+        background: var(--surface-alt);
+        color: var(--text);
+        border: 1px solid var(--surface-alt);
+        border-radius: 4px;
+        padding: .35rem .5rem;
+        font-size: .78rem;
+    }
+
+    .inline-form input[type="text"],
+    .inline-form input[name="nom"] {
+        width: 130px;
+    }
+
+    .inline-form input[type="number"] {
+        width: 70px;
+    }
+
+    .inline-form .field {
+        display: flex;
+        flex-direction: column;
+        gap: .2rem;
+    }
+
+    .inline-form .field label {
+        font-size: .65rem;
+        color: var(--text-muted);
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+
+    .badge {
+        display: inline-block;
+        font-size: .68rem;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 10px;
+        color: #fff;
+    }
+
+    .badge.unread { background: var(--accent); }
+    .badge.read { background: var(--success); }
+
+    .message-box {
         padding: 1rem;
         border-radius: 5px;
         margin-bottom: 1rem;
         text-align: center;
     }
-    
-    .message.success {
-        background: #27ae60;
-        color: white;
+
+    .message-box.success {
+        background: var(--success);
+        color: #fff;
     }
-    
-    .message.error {
-        background: #e74c3c;
-        color: white;
+
+    .message-box.error {
+        background: var(--accent);
+        color: #fff;
     }
-    
-    .stats-grid {
+
+    .add-product-form {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: .8rem;
+        align-items: end;
     }
-    
-    .stat-card {
-        background: #34495e;
-        padding: 1.5rem;
-        border-radius: 8px;
-        text-align: center;
+
+    .add-product-form .full {
+        grid-column: 1 / -1;
     }
-    
-    .stat-number {
-        font-size: 2rem;
+
+    .add-product-form label {
+        display: block;
+        font-size: .72rem;
+        color: var(--text-muted);
+        margin-bottom: .3rem;
         font-weight: bold;
-        color: #e74c3c;
     }
-    
-    .stat-label {
-        color: #bdc3c7;
-        margin-top: 0.5rem;
+
+    .add-product-form input,
+    .add-product-form select,
+    .add-product-form textarea {
+        width: 100%;
+        padding: .6rem;
+        border: 1px solid var(--surface-alt);
+        border-radius: 5px;
+        background: var(--surface-alt);
+        color: var(--text);
+        font-size: .85rem;
     }
+
+    .add-product-form textarea {
+        min-height: 60px;
+        resize: vertical;
+    }
+
+    .add-product-form button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        padding: .7rem;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: .85rem;
+    }
+
+    .add-product-form button:hover {
+        background: var(--accent-hover);
+    }
+
+    .order-lines-cell {
+        font-size: .75rem;
+        line-height: 1.5;
+    }
+
+    .stock-out { color: var(--accent); font-weight: bold; }
+    .stock-low { color: #d8a316; font-weight: bold; }
 </style>
 
 <main class="main-content">
     <div class="admin-container">
         <h1 class="admin-title">Panel d'Administration</h1>
-        
+
         <?php if ($message): ?>
-            <div class="message success"><?php echo htmlspecialchars($message); ?></div>
+            <div class="message-box success"><?php echo htmlspecialchars($message); ?></div>
         <?php endif; ?>
-        
         <?php if ($error): ?>
-            <div class="message error"><?php echo htmlspecialchars($error); ?></div>
+            <div class="message-box error"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
-        
-        <!-- Statistiques -->
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-number"><?php echo count($rdv_list); ?></div>
@@ -185,31 +455,58 @@ try {
                 <div class="stat-number"><?php echo count($users_list); ?></div>
                 <div class="stat-label">Utilisateurs</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-number"><?php echo count($commandes_list); ?></div>
+                <div class="stat-label">Commandes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><?php echo count($produits_list); ?></div>
+                <div class="stat-label">Produits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><?php echo $messagesNonLus; ?></div>
+                <div class="stat-label">Messages non lus</div>
+            </div>
         </div>
-        
-        <div class="admin-grid">
-            <!-- Rendez-vous -->
+
+        <?php if (!isStripeConfigured()): ?>
+            <div class="message-box" style="background:#d8a316;color:#1c1c1c;">⚠️ Stripe non configuré — les commandes sont payées en mode simulation (aucun encaissement réel). Renseignez <code>stripe_secret_key</code> / <code>stripe_publishable_key</code> dans backend/config.php.</div>
+        <?php endif; ?>
+        <?php if (!isSmtpConfigured()): ?>
+            <div class="message-box" style="background:#d8a316;color:#1c1c1c;">⚠️ SMTP non configuré — les emails sont journalisés (onglet Emails) au lieu d'être réellement envoyés. Renseignez <code>smtp_host</code> / <code>smtp_user</code> dans backend/config.php.</div>
+        <?php endif; ?>
+
+        <div class="tabs" id="adminTabs">
+            <button type="button" class="tab-btn active" data-tab="rdv">Rendez-vous</button>
+            <button type="button" class="tab-btn" data-tab="commandes">Commandes</button>
+            <button type="button" class="tab-btn" data-tab="produits">Produits</button>
+            <button type="button" class="tab-btn" data-tab="promos">Codes promo</button>
+            <button type="button" class="tab-btn" data-tab="avis">Avis clients</button>
+            <button type="button" class="tab-btn" data-tab="messages">Messages</button>
+            <button type="button" class="tab-btn" data-tab="emails">Emails</button>
+            <button type="button" class="tab-btn" data-tab="utilisateurs">Utilisateurs</button>
+        </div>
+
+        <!-- RDV -->
+        <div class="tab-panel active" id="tab-rdv">
             <div class="admin-card">
-                <h3 class="card-title">Rendez-vous récents</h3>
+                <h3 class="card-title">Rendez-vous</h3>
+                <div class="table-scroll">
                 <table class="data-table">
                     <thead>
-                        <tr>
-                            <th>Nom</th>
-                            <th>Email</th>
-                            <th>Service</th>
-                            <th>Date</th>
-                            <th>Action</th>
-                        </tr>
+                        <tr><th>Nom</th><th>Email</th><th>Service</th><th>Boutique</th><th>Date</th><th>Action</th></tr>
                     </thead>
                     <tbody>
-                        <?php foreach (array_slice($rdv_list, 0, 10) as $rdv): ?>
+                        <?php foreach ($rdv_list as $rdv): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($rdv['nom'] . ' ' . $rdv['prenom']); ?></td>
                             <td><?php echo htmlspecialchars($rdv['email']); ?></td>
                             <td><?php echo htmlspecialchars($rdv['service']); ?></td>
+                            <td><?php echo htmlspecialchars($rdv['boutique']); ?></td>
                             <td><?php echo date('d/m/Y', strtotime($rdv['date_rdv'])); ?></td>
                             <td>
                                 <form method="POST" style="display: inline;">
+                                    <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete_rdv">
                                     <input type="hidden" name="rdv_id" value="<?php echo $rdv['id']; ?>">
                                     <button type="submit" class="btn-delete" onclick="return confirm('Supprimer ce rendez-vous ?')">Supprimer</button>
@@ -217,21 +514,389 @@ try {
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php if (empty($rdv_list)): ?>
+                            <tr><td colspan="6">Aucun rendez-vous pour le moment.</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
-            
-            <!-- Utilisateurs -->
+        </div>
+
+        <!-- COMMANDES -->
+        <div class="tab-panel" id="tab-commandes">
             <div class="admin-card">
-                <h3 class="card-title">Utilisateurs</h3>
+                <h3 class="card-title">Commandes</h3>
+                <div class="table-scroll">
                 <table class="data-table">
                     <thead>
+                        <tr><th>N°</th><th>Client</th><th>Articles</th><th>Total</th><th>Livraison</th><th>N° suivi</th><th>Date</th><th>Statut</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($commandes_list as $commande): ?>
                         <tr>
-                            <th>Nom</th>
-                            <th>Email</th>
-                            <th>Rôle</th>
-                            <th>Inscription</th>
+                            <td><?php echo htmlspecialchars($commande['numero']); ?><?php if (!empty($commande['code_promo'])): ?><br><span style="font-size:.68rem;color:var(--success);">Promo : <?php echo htmlspecialchars($commande['code_promo']); ?></span><?php endif; ?></td>
+                            <td><?php echo htmlspecialchars($commande['nom']); ?><br><span style="font-size:.72rem;"><?php echo htmlspecialchars($commande['email']); ?></span></td>
+                            <td class="order-lines-cell">
+                                <?php foreach ($lignesParCommande[$commande['id']] ?? [] as $l): ?>
+                                    <?php echo htmlspecialchars($l['nom_produit']); ?> × <?php echo (int) $l['quantite']; ?><br>
+                                <?php endforeach; ?>
+                            </td>
+                            <td><?php echo number_format($commande['total'], 2, ',', ' '); ?> €</td>
+                            <td><?php echo $commande['mode_livraison'] === 'colissimo' ? '📦 Colissimo' : '🏬 Boutique'; ?></td>
+                            <td>
+                                <?php if ($commande['mode_livraison'] === 'colissimo'): ?>
+                                <form method="POST" class="inline-form">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="update_suivi">
+                                    <input type="hidden" name="commande_id" value="<?php echo $commande['id']; ?>">
+                                    <input type="text" name="numero_suivi" value="<?php echo htmlspecialchars($commande['numero_suivi'] ?? ''); ?>" placeholder="N° suivi" style="width:100px;">
+                                    <button type="submit" class="btn-small">OK</button>
+                                </form>
+                                <?php else: ?>
+                                    —
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo date('d/m/Y', strtotime($commande['created_at'])); ?></td>
+                            <td>
+                                <form method="POST" class="inline-form">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="update_statut">
+                                    <input type="hidden" name="commande_id" value="<?php echo $commande['id']; ?>">
+                                    <select name="statut" onchange="this.form.submit()">
+                                        <?php foreach ($statuts as $key => $label): ?>
+                                            <option value="<?php echo $key; ?>" <?php echo $commande['statut'] === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </form>
+                            </td>
                         </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($commandes_list)): ?>
+                            <tr><td colspan="8">Aucune commande pour le moment.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUITS -->
+        <div class="tab-panel" id="tab-produits">
+            <div class="admin-card">
+                <h3 class="card-title">Ajouter un produit</h3>
+                <form method="POST" class="add-product-form">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="add_produit">
+                    <div>
+                        <label>Nom</label>
+                        <input type="text" name="nom" required>
+                    </div>
+                    <div>
+                        <label>Catégorie</label>
+                        <select name="categorie" required>
+                            <?php foreach ($categories as $key => $label): ?>
+                                <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Icône (emoji)</label>
+                        <input type="text" name="icone" value="📦" maxlength="4">
+                    </div>
+                    <div>
+                        <label>Prix (€)</label>
+                        <input type="number" step="0.01" min="0.01" name="prix" required>
+                    </div>
+                    <div>
+                        <label>Prix barré (optionnel)</label>
+                        <input type="number" step="0.01" min="0" name="prix_barre">
+                    </div>
+                    <div>
+                        <label>État</label>
+                        <select name="tag">
+                            <?php foreach ($tags as $key => $label): ?>
+                                <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Étoiles (1-5)</label>
+                        <input type="number" name="etoiles" min="1" max="5" value="5">
+                    </div>
+                    <div>
+                        <label>Stock</label>
+                        <input type="number" name="stock" min="0" value="0">
+                    </div>
+                    <div class="full">
+                        <label>Description</label>
+                        <textarea name="description"></textarea>
+                    </div>
+                    <div>
+                        <button type="submit">Ajouter le produit</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="card-title">Catalogue</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Produit</th><th>Modifier</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($produits_list as $p): ?>
+                        <tr>
+                            <td><?php echo $p['icone']; ?> <?php echo htmlspecialchars($p['nom']); ?><br><span style="font-size:.7rem;"><?php echo $categories[$p['categorie']] ?? $p['categorie']; ?></span></td>
+                            <td>
+                                <form method="POST" class="inline-form">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="edit_produit">
+                                    <input type="hidden" name="produit_id" value="<?php echo $p['id']; ?>">
+                                    <span class="field"><label>Nom</label><input type="text" name="nom" value="<?php echo htmlspecialchars($p['nom']); ?>"></span>
+                                    <span class="field"><label>Prix €</label><input type="number" step="0.01" name="prix" value="<?php echo $p['prix']; ?>"></span>
+                                    <span class="field"><label>Prix barré</label><input type="number" step="0.01" name="prix_barre" value="<?php echo $p['prix_barre']; ?>" placeholder="—"></span>
+                                    <span class="field"><label>État</label>
+                                        <select name="tag">
+                                            <?php foreach ($tags as $key => $label): ?>
+                                                <option value="<?php echo $key; ?>" <?php echo $p['tag'] === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </span>
+                                    <span class="field"><label>Stock</label><input type="number" name="stock" value="<?php echo (int) $p['stock']; ?>" class="<?php echo (int) $p['stock'] <= 0 ? 'stock-out' : ((int) $p['stock'] <= 3 ? 'stock-low' : ''); ?>"></span>
+                                    <button type="submit" class="btn-small">Enregistrer</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="POST" onsubmit="return confirm('Supprimer ce produit ?')">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="delete_produit">
+                                    <input type="hidden" name="produit_id" value="<?php echo $p['id']; ?>">
+                                    <button type="submit" class="btn-delete">Suppr.</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($produits_list)): ?>
+                            <tr><td colspan="3">Aucun produit dans le catalogue.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MESSAGES -->
+        <div class="tab-panel" id="tab-messages">
+            <div class="admin-card">
+                <h3 class="card-title">Messages de contact</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Statut</th><th>Nom</th><th>Email</th><th>Sujet</th><th>Message</th><th>Date</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($messages_list as $m): ?>
+                        <tr>
+                            <td><span class="badge <?php echo $m['lu'] ? 'read' : 'unread'; ?>"><?php echo $m['lu'] ? 'Lu' : 'Non lu'; ?></span></td>
+                            <td><?php echo htmlspecialchars($m['nom']); ?></td>
+                            <td><?php echo htmlspecialchars($m['email']); ?></td>
+                            <td><?php echo htmlspecialchars($m['sujet']); ?></td>
+                            <td style="max-width: 260px;"><?php echo nl2br(htmlspecialchars($m['message'])); ?></td>
+                            <td><?php echo date('d/m/Y', strtotime($m['created_at'])); ?></td>
+                            <td class="inline-form">
+                                <?php if (!$m['lu']): ?>
+                                <form method="POST">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="mark_message_lu">
+                                    <input type="hidden" name="message_id" value="<?php echo $m['id']; ?>">
+                                    <button type="submit" class="btn-small">Marquer lu</button>
+                                </form>
+                                <?php endif; ?>
+                                <form method="POST" onsubmit="return confirm('Supprimer ce message ?')">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="delete_message">
+                                    <input type="hidden" name="message_id" value="<?php echo $m['id']; ?>">
+                                    <button type="submit" class="btn-delete">Suppr.</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($messages_list)): ?>
+                            <tr><td colspan="7">Aucun message pour le moment.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- CODES PROMO -->
+        <div class="tab-panel" id="tab-promos">
+            <div class="admin-card">
+                <h3 class="card-title">Créer un code promo</h3>
+                <form method="POST" class="add-product-form">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="add_promo">
+                    <div>
+                        <label>Code</label>
+                        <input type="text" name="code" placeholder="ETE2026" required style="text-transform:uppercase;">
+                    </div>
+                    <div>
+                        <label>Type</label>
+                        <select name="type">
+                            <option value="pourcentage">Pourcentage (%)</option>
+                            <option value="montant">Montant fixe (€)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Valeur</label>
+                        <input type="number" step="0.01" min="0.01" name="valeur" required>
+                    </div>
+                    <div>
+                        <label>Utilisations max (optionnel)</label>
+                        <input type="number" min="1" name="usage_max">
+                    </div>
+                    <div>
+                        <label>Expire le (optionnel)</label>
+                        <input type="date" name="date_expiration">
+                    </div>
+                    <div>
+                        <button type="submit">Créer</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="card-title">Codes existants</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Code</th><th>Type</th><th>Valeur</th><th>Utilisations</th><th>Expire</th><th>Statut</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($promos_list as $promo): ?>
+                        <tr>
+                            <td><strong><?php echo htmlspecialchars($promo['code']); ?></strong></td>
+                            <td><?php echo $promo['type'] === 'pourcentage' ? 'Pourcentage' : 'Montant fixe'; ?></td>
+                            <td><?php echo $promo['type'] === 'pourcentage' ? (float) $promo['valeur'] . ' %' : number_format($promo['valeur'], 2, ',', ' ') . ' €'; ?></td>
+                            <td><?php echo (int) $promo['usage_compte']; ?><?php echo $promo['usage_max'] ? ' / ' . (int) $promo['usage_max'] : ''; ?></td>
+                            <td><?php echo $promo['date_expiration'] ? htmlspecialchars($promo['date_expiration']) : '—'; ?></td>
+                            <td><span class="badge <?php echo $promo['actif'] ? 'read' : 'unread'; ?>"><?php echo $promo['actif'] ? 'Actif' : 'Désactivé'; ?></span></td>
+                            <td class="inline-form">
+                                <form method="POST">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="toggle_promo">
+                                    <input type="hidden" name="promo_id" value="<?php echo $promo['id']; ?>">
+                                    <button type="submit" class="btn-small"><?php echo $promo['actif'] ? 'Désactiver' : 'Activer'; ?></button>
+                                </form>
+                                <form method="POST" onsubmit="return confirm('Supprimer ce code ?')">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="delete_promo">
+                                    <input type="hidden" name="promo_id" value="<?php echo $promo['id']; ?>">
+                                    <button type="submit" class="btn-delete">Suppr.</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($promos_list)): ?>
+                            <tr><td colspan="7">Aucun code promo.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- AVIS CLIENTS -->
+        <div class="tab-panel" id="tab-avis">
+            <div class="admin-card">
+                <h3 class="card-title">Avis clients</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Statut</th><th>Produit</th><th>Auteur</th><th>Note</th><th>Commentaire</th><th>Date</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($avis_list as $a): ?>
+                        <tr>
+                            <td><span class="badge <?php echo $a['approuve'] ? 'read' : 'unread'; ?>"><?php echo $a['approuve'] ? 'Publié' : 'En attente'; ?></span></td>
+                            <td><?php echo htmlspecialchars($a['produit_nom'] ?? '—'); ?></td>
+                            <td><?php echo htmlspecialchars($a['nom']); ?></td>
+                            <td><?php echo str_repeat('★', (int) $a['note']) . str_repeat('☆', 5 - (int) $a['note']); ?></td>
+                            <td style="max-width:260px;"><?php echo nl2br(htmlspecialchars($a['commentaire'])); ?></td>
+                            <td><?php echo date('d/m/Y', strtotime($a['created_at'])); ?></td>
+                            <td class="inline-form">
+                                <?php if (!$a['approuve']): ?>
+                                <form method="POST">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="approve_avis">
+                                    <input type="hidden" name="avis_id" value="<?php echo $a['id']; ?>">
+                                    <button type="submit" class="btn-small">Publier</button>
+                                </form>
+                                <?php endif; ?>
+                                <form method="POST" onsubmit="return confirm('Supprimer cet avis ?')">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="delete_avis">
+                                    <input type="hidden" name="avis_id" value="<?php echo $a['id']; ?>">
+                                    <button type="submit" class="btn-delete">Suppr.</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($avis_list)): ?>
+                            <tr><td colspan="7">Aucun avis pour le moment.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMAILS -->
+        <div class="tab-panel" id="tab-emails">
+            <div class="admin-card">
+                <h3 class="card-title">Emails (100 derniers)</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Statut</th><th>Destinataire</th><th>Sujet</th><th>Date</th><th>Aperçu</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($emails_list as $e): ?>
+                        <tr>
+                            <td><span class="badge <?php echo $e['statut'] === 'envoye' ? 'read' : ($e['statut'] === 'echec' ? 'unread' : ''); ?>" style="<?php echo $e['statut'] === 'journalise' ? 'background:var(--accent-2);' : ''; ?>">
+                                <?php echo ['envoye' => 'Envoyé', 'echec' => 'Échec', 'journalise' => 'Journalisé (dev)'][$e['statut']] ?? $e['statut']; ?>
+                            </span></td>
+                            <td><?php echo htmlspecialchars($e['destinataire']); ?></td>
+                            <td><?php echo htmlspecialchars($e['sujet']); ?></td>
+                            <td><?php echo date('d/m/Y H:i', strtotime($e['created_at'])); ?></td>
+                            <td>
+                                <details>
+                                    <summary style="cursor:pointer;color:var(--accent-2);">Voir</summary>
+                                    <div style="max-width:400px; margin-top:.5rem; background:var(--surface-deep); padding:.6rem; border-radius:6px;"><?php echo $e['corps_html']; ?></div>
+                                </details>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($emails_list)): ?>
+                            <tr><td colspan="5">Aucun email pour le moment.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- UTILISATEURS -->
+        <div class="tab-panel" id="tab-utilisateurs">
+            <div class="admin-card">
+                <h3 class="card-title">Utilisateurs</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Inscription</th></tr>
                     </thead>
                     <tbody>
                         <?php foreach ($users_list as $user): ?>
@@ -244,9 +909,24 @@ try {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
 </main>
+
+<script>
+    (function () {
+        var tabs = document.querySelectorAll('#adminTabs .tab-btn');
+        tabs.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                tabs.forEach(function (b) { b.classList.remove('active'); });
+                document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.getAttribute('data-tab')).classList.add('active');
+            });
+        });
+    })();
+</script>
 
 <?php include 'footer.php'; ?>

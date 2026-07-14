@@ -20,12 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     $service = $_POST['service'] ?? '';
     $date = $_POST['date'] ?? '';
     $message = trim($_POST['message'] ?? '');
-    
+
     // Validation
-    if (empty($nom) || empty($prenom) || empty($email) || empty($telephone) || empty($boutique) || empty($service) || empty($date)) {
+    if (!csrfVerify()) {
+        $error = 'Session expirée, merci de réessayer.';
+    } elseif (empty($nom) || empty($prenom) || empty($email) || empty($telephone) || empty($boutique) || empty($service) || empty($date)) {
         $error = 'Tous les champs obligatoires doivent être remplis';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Email invalide';
+    } elseif ($date < date('Y-m-d')) {
+        $error = 'La date sélectionnée est déjà passée';
     } else {
         $pdo = initDatabase();
         
@@ -52,13 +56,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .page-title {
         font-size: 2.5rem;
         margin-bottom: 2rem;
-        color: #e74c3c;
+        color: var(--accent);
         text-align: center;
     }
     
     .rdv-form {
-        background: #2c3e50;
-        border: 2px solid #34495e;
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
         border-radius: 12px;
         padding: 2rem;
     }
@@ -77,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-weight: bold;
     }
     
@@ -86,10 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .form-group textarea {
         width: 100%;
         padding: 0.8rem;
-        border: 2px solid #34495e;
+        border: 2px solid var(--surface-alt);
         border-radius: 5px;
-        background: #1a1a1a;
-        color: white;
+        background: var(--surface-deep);
+        color: var(--text);
         font-size: 1rem;
     }
     
@@ -97,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     .form-group select:focus,
     .form-group textarea:focus {
         outline: none;
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .form-group textarea {
@@ -106,8 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     }
     
     .btn-submit {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         padding: 1rem 2rem;
         border: none;
         border-radius: 5px;
@@ -119,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     }
     
     .btn-submit:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
     
     .message {
@@ -130,17 +134,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     }
     
     .message.success {
-        background: #27ae60;
-        color: white;
+        background: var(--success);
+        color: var(--text);
     }
     
     .message.error {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
     }
     
     .info-section {
-        background: #34495e;
+        background: var(--surface-alt);
         border-radius: 8px;
         padding: 2rem;
         margin-top: 2rem;
@@ -148,13 +152,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     }
     
     .info-title {
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 1.5rem;
         margin-bottom: 1rem;
     }
     
     .info-text {
-        color: #bdc3c7;
+        color: var(--text-muted);
         line-height: 1.6;
     }
     
@@ -178,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         <?php endif; ?>
         
         <form method="POST" class="rdv-form">
+            <?php echo csrfField(); ?>
             <div class="form-row">
                 <div class="form-group">
                     <label for="nom">Nom *</label>
@@ -228,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
             
             <div class="form-group">
                 <label for="date">Date souhaitée *</label>
-                <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($_POST['date'] ?? ''); ?>" required>
+                <input type="date" id="date" name="date" min="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($_POST['date'] ?? ''); ?>" required>
             </div>
             
             <div class="form-group">

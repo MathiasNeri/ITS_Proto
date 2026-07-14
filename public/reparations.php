@@ -19,7 +19,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     .page-title {
         font-size: 2.5rem;
         margin-bottom: 2rem;
-        color: #e74c3c;
+        color: var(--accent);
         text-align: center;
     }
     
@@ -31,8 +31,8 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .os-card {
-        background: #2c3e50;
-        border: 2px solid #34495e;
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
         border-radius: 12px;
         padding: 2rem;
         text-align: center;
@@ -41,7 +41,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     
     .os-card:hover {
         transform: translateY(-3px);
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .os-icon {
@@ -56,12 +56,12 @@ $user_role = $_SESSION['user_role'] ?? '';
     .os-title {
         font-size: 1.3rem;
         font-weight: bold;
-        color: white;
+        color: var(--text);
         margin-bottom: 1rem;
     }
     
     .os-description {
-        color: #bdc3c7;
+        color: var(--text-muted);
         line-height: 1.6;
     }
     
@@ -77,20 +77,20 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .service-card {
-        background: #34495e;
+        background: var(--surface-alt);
         border-radius: 8px;
         padding: 1.5rem;
         text-align: center;
     }
     
     .service-title {
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 1.2rem;
         margin-bottom: 1rem;
     }
     
     .service-description {
-        color: #bdc3c7;
+        color: var(--text-muted);
         line-height: 1.6;
     }
     
@@ -100,8 +100,8 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .cta-btn {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         padding: 1rem 2rem;
         border: none;
         border-radius: 8px;
@@ -114,7 +114,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .cta-btn:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
 </style>
 
@@ -123,7 +123,7 @@ $user_role = $_SESSION['user_role'] ?? '';
         <h1 class="page-title">🔧 RÉPARATIONS</h1>
         
         <div class="services-section">
-            <h2 style="color: #e74c3c; text-align: center; margin-bottom: 2rem;">Systèmes d'exploitation supportés</h2>
+            <h2 style="color: var(--accent); text-align: center; margin-bottom: 2rem;">Systèmes d'exploitation supportés</h2>
             <div class="os-grid">
                 <div class="os-card">
                     <div class="os-icon">
@@ -178,7 +178,7 @@ $user_role = $_SESSION['user_role'] ?? '';
         </div>
         
         <div class="services-section">
-            <h2 style="color: #e74c3c; text-align: center; margin-bottom: 2rem;">Types de réparations</h2>
+            <h2 style="color: var(--accent); text-align: center; margin-bottom: 2rem;">Types de réparations</h2>
             <div class="services-grid">
                 <div class="service-card">
                     <h3 class="service-title">Diagnostic</h3>

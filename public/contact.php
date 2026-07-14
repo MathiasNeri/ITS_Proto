@@ -6,6 +6,34 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $is_logged_in = checkAuth();
 $user_role = $_SESSION['user_role'] ?? '';
+
+$success = '';
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nom = trim($_POST['nom'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $sujet = trim($_POST['sujet'] ?? '');
+    $messageTexte = trim($_POST['message'] ?? '');
+
+    if (!csrfVerify()) {
+        $error = 'Session expirée, merci de réessayer.';
+    } elseif (empty($nom) || empty($email) || empty($sujet) || empty($messageTexte)) {
+        $error = 'Tous les champs sont obligatoires';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Email invalide';
+    } else {
+        try {
+            $pdo = initDatabase();
+            $stmt = $pdo->prepare('INSERT INTO messages (nom, email, sujet, message) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$nom, $email, $sujet, $messageTexte]);
+            $success = 'Votre message a bien été envoyé, nous vous répondrons rapidement.';
+        } catch (PDOException $e) {
+            $error = 'Erreur lors de l\'envoi du message';
+            logError($e->getMessage());
+        }
+    }
+}
 ?>
 <?php include 'header.php'; ?>
 
@@ -19,7 +47,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     .page-title {
         font-size: 2.5rem;
         margin-bottom: 2rem;
-        color: #e74c3c;
+        color: var(--accent);
         text-align: center;
     }
     
@@ -31,21 +59,21 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .contact-info {
-        background: #2c3e50;
-        border: 2px solid #34495e;
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
         border-radius: 12px;
         padding: 2rem;
     }
     
     .contact-form {
-        background: #2c3e50;
-        border: 2px solid #34495e;
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
         border-radius: 12px;
         padding: 2rem;
     }
     
     .info-title {
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 1.5rem;
         margin-bottom: 1.5rem;
     }
@@ -54,13 +82,13 @@ $user_role = $_SESSION['user_role'] ?? '';
         display: flex;
         align-items: center;
         margin-bottom: 1.5rem;
-        color: #bdc3c7;
+        color: var(--text-muted);
     }
     
     .info-icon {
         width: 40px;
         height: 40px;
-        background: #e74c3c;
+        background: var(--accent);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -75,7 +103,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     
     .info-label {
         font-weight: bold;
-        color: white;
+        color: var(--text);
         margin-bottom: 0.25rem;
     }
     
@@ -86,7 +114,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-weight: bold;
     }
     
@@ -94,17 +122,17 @@ $user_role = $_SESSION['user_role'] ?? '';
     .form-group textarea {
         width: 100%;
         padding: 0.8rem;
-        border: 2px solid #34495e;
+        border: 2px solid var(--surface-alt);
         border-radius: 5px;
-        background: #1a1a1a;
-        color: white;
+        background: var(--surface-deep);
+        color: var(--text);
         font-size: 1rem;
     }
     
     .form-group input:focus,
     .form-group textarea:focus {
         outline: none;
-        border-color: #e74c3c;
+        border-color: var(--accent);
     }
     
     .form-group textarea {
@@ -113,8 +141,8 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .btn-submit {
-        background: #e74c3c;
-        color: white;
+        background: var(--accent);
+        color: var(--text);
         padding: 1rem 2rem;
         border: none;
         border-radius: 5px;
@@ -126,7 +154,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .btn-submit:hover {
-        background: #c0392b;
+        background: var(--accent-hover);
     }
     
     .locations-section {
@@ -141,27 +169,27 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .location-card {
-        background: #34495e;
+        background: var(--surface-alt);
         border-radius: 8px;
         padding: 2rem;
         text-align: center;
     }
     
     .location-name {
-        color: #e74c3c;
+        color: var(--accent);
         font-size: 1.3rem;
         font-weight: bold;
         margin-bottom: 1rem;
     }
     
     .location-address {
-        color: #bdc3c7;
+        color: var(--text-muted);
         line-height: 1.6;
         margin-bottom: 1rem;
     }
     
     .location-hours {
-        color: #bdc3c7;
+        color: var(--text-muted);
         font-size: 0.9rem;
     }
     
@@ -215,27 +243,36 @@ $user_role = $_SESSION['user_role'] ?? '';
             
             <div class="contact-form">
                 <h3 class="info-title">Nous écrire</h3>
+
+                <?php if ($success): ?>
+                    <div class="message success" style="padding:1rem;border-radius:5px;margin-bottom:1rem;text-align:center;background:var(--success);color:var(--text);"><?php echo htmlspecialchars($success); ?></div>
+                <?php endif; ?>
+                <?php if ($error): ?>
+                    <div class="message error" style="padding:1rem;border-radius:5px;margin-bottom:1rem;text-align:center;background:var(--accent);color:var(--text);"><?php echo htmlspecialchars($error); ?></div>
+                <?php endif; ?>
+
                 <form method="POST">
+                    <?php echo csrfField(); ?>
                     <div class="form-group">
                         <label for="nom">Nom</label>
-                        <input type="text" id="nom" name="nom" required>
+                        <input type="text" id="nom" name="nom" value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required>
+                        <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="sujet">Sujet</label>
-                        <input type="text" id="sujet" name="sujet" required>
+                        <input type="text" id="sujet" name="sujet" value="<?php echo htmlspecialchars($_POST['sujet'] ?? ''); ?>" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="message">Message</label>
-                        <textarea id="message" name="message" placeholder="Votre message..." required></textarea>
+                        <textarea id="message" name="message" placeholder="Votre message..." required><?php echo htmlspecialchars($_POST['message'] ?? ''); ?></textarea>
                     </div>
-                    
+
                     <button type="submit" class="btn-submit">Envoyer le message</button>
                 </form>
             </div>
