@@ -383,7 +383,7 @@ $user_role = $_SESSION['user_role'] ?? '';
             <a href="#contact" class="action-btn primary">Contactez-nous</a>
         </div>
         <div class="action-btn-row">
-            <a href="#devis" class="action-btn">Demander un devis</a>
+            <a href="rdv.php" class="action-btn">Demander un devis</a>
             <a href="#rdv" class="action-btn">Prendre un Rendez-vous</a>
         </div>
     </div>
