@@ -150,6 +150,42 @@ $sousTotal = array_sum(array_map(function ($l) { return $l['prix_unitaire'] * $l
             .print-btn { display: none; }
             .invoice { border-radius: 0; padding: 1.5rem; }
         }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+
+            .invoice {
+                padding: 1.5rem;
+            }
+
+            .invoice-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .company {
+                text-align: left;
+            }
+
+            .parties {
+                flex-direction: column;
+                gap: 1.2rem;
+            }
+
+            .totals {
+                width: 100%;
+            }
+
+            table {
+                font-size: .78rem;
+            }
+
+            th, td {
+                padding: .5rem .3rem;
+            }
+        }
     </style>
 </head>
 <body>

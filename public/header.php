@@ -375,6 +375,77 @@ if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
                 min-height: calc(100vh - 108px);
             }
         }
+
+        /* En dessous de 640px, le trio logo + hamburger + icônes/compte ne
+           tient plus sur une seule ligne à taille normale : on resserre tout
+           et, en dernier recours, on autorise le retour à la ligne plutôt
+           que de laisser le contenu déborder hors de l'écran. */
+        @media (max-width: 640px) {
+            .header {
+                padding: .85rem 0;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+                gap: .6rem;
+                flex-wrap: wrap;
+                row-gap: .6rem;
+            }
+
+            .logo-image {
+                height: 42px;
+            }
+
+            .hamburger-btn {
+                width: 30px;
+                height: 30px;
+            }
+
+            .hamburger-btn svg {
+                width: 15px;
+                height: 15px;
+            }
+
+            .user-menu {
+                gap: .6rem;
+            }
+
+            .action-icons {
+                gap: .4rem;
+            }
+
+            .icon-btn {
+                width: 30px;
+                height: 30px;
+            }
+
+            .user-link {
+                font-size: .78rem;
+            }
+
+            .auth-links {
+                gap: .6rem;
+            }
+
+            body {
+                padding-top: 96px;
+            }
+
+            .main-content {
+                margin-top: 96px;
+                min-height: calc(100vh - 96px);
+            }
+        }
+
+        @media (max-width: 360px) {
+            .logo-image {
+                height: 36px;
+            }
+
+            .menu-divider {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>

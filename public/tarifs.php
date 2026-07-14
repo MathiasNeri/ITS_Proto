@@ -121,6 +121,22 @@ $user_role = $_SESSION['user_role'] ?? '';
         color: var(--text-muted);
         line-height: 1.6;
     }
+
+    @media (max-width: 480px) {
+        .page-container {
+            padding: 0 1.2rem;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .pricing-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pricing-card.featured {
+            transform: none;
+        }
+    }
 </style>
 
 <main class="main-content">

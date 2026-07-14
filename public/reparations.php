@@ -116,6 +116,18 @@ $user_role = $_SESSION['user_role'] ?? '';
     .cta-btn:hover {
         background: var(--accent-hover);
     }
+
+    @media (max-width: 480px) {
+        .page-container {
+            padding: 0 1.2rem;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .services-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <main class="main-content">

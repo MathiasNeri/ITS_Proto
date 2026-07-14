@@ -239,15 +239,47 @@ $user_role = $_SESSION['user_role'] ?? '';
             flex-direction: column;
             align-items: center;
         }
+
+        .action-btn-row {
+            flex-direction: column;
+            width: 100%;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            width: 100%;
+        }
+
+        .main-title {
+            font-size: 1.5rem;
+        }
+
+        .hero {
+            height: auto;
+            min-height: 60vh;
+            padding: 2rem 0;
+        }
     }
-    
+
     @media (max-width: 480px) {
         .services-grid {
             grid-template-columns: 1fr;
         }
-        
+
         .os-grid {
             grid-template-columns: repeat(2, 1fr);
+        }
+
+        .hero-content {
+            padding: 0 1.2rem;
+        }
+
+        .hero-text {
+            font-size: 1.2rem;
+        }
+
+        .main-title {
+            font-size: 1.25rem;
         }
     }
 </style>

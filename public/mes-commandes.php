@@ -126,6 +126,17 @@ $statutLabels = [
     .facture-link:hover {
         text-decoration: underline;
     }
+
+    @media (max-width: 480px) {
+        .page-container {
+            padding: 0 1.2rem;
+        }
+
+        .order-lines div {
+            flex-wrap: wrap;
+            gap: .2rem;
+        }
+    }
 </style>
 
 <main class="main-content">

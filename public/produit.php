@@ -355,6 +355,26 @@ if ($produit) {
         .product-grid {
             grid-template-columns: 1fr;
         }
+
+        .product-price {
+            font-size: 1.5rem;
+        }
+
+        .product-media {
+            height: 220px;
+            font-size: 70px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-container {
+            padding: 0 1.2rem;
+        }
+
+        .product-grid {
+            padding: 1.4rem;
+            gap: 1.5rem;
+        }
     }
 </style>
 

@@ -198,6 +198,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             grid-template-columns: 1fr;
         }
     }
+
+    @media (max-width: 360px) {
+        .locations-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <main class="main-content">

@@ -372,6 +372,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'comma
             grid-template-columns: 1fr;
         }
     }
+
+    @media (max-width: 480px) {
+        .page-container {
+            padding: 0 1.2rem;
+        }
+
+        .order-summary .row {
+            flex-wrap: wrap;
+            gap: .2rem;
+        }
+
+        .promo-row {
+            flex-wrap: wrap;
+        }
+
+        .promo-row input {
+            flex: 1 1 100%;
+        }
+    }
 </style>
 
 <main class="main-content">

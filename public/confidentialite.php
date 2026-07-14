@@ -74,6 +74,7 @@ $user_role = $_SESSION['user_role'] ?? '';
         </ul>
 
         <h2>Cookies</h2>
+        <div style="overflow-x: auto;">
         <table>
             <thead>
                 <tr><th>Cookie</th><th>Finalité</th><th>Durée</th></tr>
@@ -84,6 +85,7 @@ $user_role = $_SESSION['user_role'] ?? '';
                 <tr><td>its_cookie_consent</td><td>Mémorisation de votre choix cookies</td><td>Persistant (local)</td></tr>
             </tbody>
         </table>
+        </div>
         <p>Aucun cookie publicitaire ou de traçage tiers n'est déposé par ce site.</p>
 
         <h2>Conservation</h2>

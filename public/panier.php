@@ -199,6 +199,48 @@ if (!empty($cart)) {
         text-decoration: none;
         font-weight: bold;
     }
+
+    /* En dessous de 600px, la ligne panier (miniature + infos + quantité +
+       sous-total + suppression) ne tient plus sur une seule ligne : on la
+       fait passer sur deux lignes plutôt que de laisser tout déborder. */
+    @media (max-width: 600px) {
+        .page-container {
+            padding: 0 1.2rem;
+        }
+
+        .cart-card {
+            padding: 1rem;
+        }
+
+        .cart-row {
+            flex-wrap: wrap;
+            gap: .6rem;
+        }
+
+        .cart-thumb {
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+        }
+
+        .cart-info {
+            flex: 1 1 calc(100% - 44px - .6rem);
+        }
+
+        .qty-form {
+            order: 3;
+        }
+
+        .cart-sous-total {
+            order: 4;
+            margin-left: auto;
+            min-width: auto;
+        }
+
+        .cart-row > form:last-of-type {
+            order: 5;
+        }
+    }
 </style>
 
 <main class="main-content">
