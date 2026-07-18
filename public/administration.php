@@ -629,7 +629,16 @@ $devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['st
                             <td><?php echo htmlspecialchars($d['materiel']); ?></td>
                             <td><?php echo htmlspecialchars($d['email']); ?><br><span style="font-size:.72rem;"><?php echo htmlspecialchars($d['telephone']); ?></span></td>
                             <td style="max-width:180px;"><?php echo htmlspecialchars($d['adresse'] . ', ' . $d['code_postal'] . ' ' . $d['ville']); ?></td>
-                            <td style="max-width:220px;"><?php echo nl2br(htmlspecialchars($d['message'] ?? '')); ?></td>
+                            <td style="max-width:220px;">
+                                <?php if (strlen($d['message'] ?? '') > 140): ?>
+                                    <details>
+                                        <summary style="cursor:pointer;color:var(--accent-2);">Voir le détail</summary>
+                                        <div style="margin-top:.5rem; white-space: pre-wrap;"><?php echo htmlspecialchars($d['message']); ?></div>
+                                    </details>
+                                <?php else: ?>
+                                    <?php echo nl2br(htmlspecialchars($d['message'] ?? '')); ?>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <?php if (!empty($d['fichier_chemin'])): ?>
                                     <a href="devis-fichier.php?id=<?php echo $d['id']; ?>" class="btn-small" style="text-decoration:none;display:inline-block;">Télécharger</a>

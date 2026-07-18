@@ -211,6 +211,27 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
+    // Composants pour le configurateur de PC sur mesure. socket/ram_type/
+    // form_factor/wattage/power_draw servent au moteur de compatibilité
+    // (voir configurateur.php) selon le type de composant.
+    $pdo->exec("CREATE TABLE IF NOT EXISTS composants_pc (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        marque TEXT NOT NULL,
+        nom TEXT NOT NULL,
+        icone TEXT NOT NULL DEFAULT '🔧',
+        prix REAL NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        socket TEXT,
+        ram_type TEXT,
+        form_factor TEXT,
+        wattage INTEGER,
+        power_draw INTEGER,
+        capacite TEXT,
+        stock INTEGER NOT NULL DEFAULT 5,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
     // Migrations légères pour les bases créées avant l'ajout de ces colonnes
     if (!columnExists($pdo, 'rdv', 'vu')) {
         $pdo->exec("ALTER TABLE rdv ADD COLUMN vu INTEGER NOT NULL DEFAULT 0");
@@ -266,6 +287,91 @@ function initDatabase() {
         $ins = $pdo->prepare('INSERT INTO produits (nom, categorie, icone, prix, prix_barre, tag, etoiles, description, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
         foreach ($produits as $p) {
             $ins->execute($p);
+        }
+    }
+
+    // Catalogue du configurateur PC (une seule fois)
+    $stmt = $pdo->query('SELECT COUNT(*) FROM composants_pc');
+    if ((int) $stmt->fetchColumn() === 0) {
+        // [type, marque, nom, icone, prix, description, socket, ram_type, form_factor, wattage, power_draw, capacite, stock]
+        $composants = [
+            // --- Processeurs ---
+            ['cpu', 'AMD', 'Ryzen 5 5600', '🧠', 139, '6 coeurs / 12 threads, excellent rapport performance/prix en AM4.', 'AM4', 'DDR4', null, null, 65, null, 12],
+            ['cpu', 'AMD', 'Ryzen 5 7600X', '🧠', 219, '6 coeurs / 12 threads, plateforme AM5 nouvelle génération.', 'AM5', 'DDR5', null, null, 105, null, 10],
+            ['cpu', 'AMD', 'Ryzen 7 7800X3D', '🧠', 389, '8 coeurs / 16 threads, cache 3D vertical, référence gaming.', 'AM5', 'DDR5', null, null, 120, null, 8],
+            ['cpu', 'AMD', 'Ryzen 9 7950X', '🧠', 549, '16 coeurs / 32 threads, pour montage vidéo et calcul intensif.', 'AM5', 'DDR5', null, null, 170, null, 5],
+            ['cpu', 'Intel', 'Core i5-13400F', '🧠', 179, '10 coeurs, très bon compromis bureautique/gaming, sans iGPU.', 'LGA1700', 'DDR4', null, null, 65, null, 12],
+            ['cpu', 'Intel', 'Core i5-13600K', '🧠', 299, '14 coeurs, débridé (overclockable), plateforme DDR5.', 'LGA1700', 'DDR5', null, null, 125, null, 9],
+            ['cpu', 'Intel', 'Core i7-14700K', '🧠', 419, '20 coeurs, polyvalent haut de gamme.', 'LGA1700', 'DDR5', null, null, 125, null, 6],
+            ['cpu', 'Intel', 'Core i9-14900K', '🧠', 589, '24 coeurs, le plus performant du catalogue Intel.', 'LGA1700', 'DDR5', null, null, 125, null, 4],
+
+            // --- Cartes mères ---
+            ['carte_mere', 'Gigabyte', 'B550 AORUS Elite', '🔌', 139, 'ATX, AM4, DDR4, robuste et évolutive.', 'AM4', 'DDR4', 'ATX', null, null, null, 8],
+            ['carte_mere', 'ASRock', 'B450M Pro4', '🔌', 79, 'mATX, AM4, DDR4, entrée de gamme fiable.', 'AM4', 'DDR4', 'mATX', null, null, null, 8],
+            ['carte_mere', 'ASUS', 'TUF Gaming B650-PLUS', '🔌', 189, 'ATX, AM5, DDR5, VRM renforcé.', 'AM5', 'DDR5', 'ATX', null, null, null, 8],
+            ['carte_mere', 'MSI', 'PRO B650M-A', '🔌', 149, 'mATX, AM5, DDR5, compacte et complète.', 'AM5', 'DDR5', 'mATX', null, null, null, 8],
+            ['carte_mere', 'ASUS', 'ROG Strix X670E-I', '🔌', 349, 'Mini-ITX, AM5, DDR5, pour PC compact haut de gamme.', 'AM5', 'DDR5', 'ITX', null, null, null, 4],
+            ['carte_mere', 'ASUS', 'Prime B760-Plus D4', '🔌', 129, 'ATX, LGA1700, DDR4, plateforme Intel économique.', 'LGA1700', 'DDR4', 'ATX', null, null, null, 8],
+            ['carte_mere', 'Gigabyte', 'B760M DS3H DDR4', '🔌', 99, 'mATX, LGA1700, DDR4, très bon rapport qualité/prix.', 'LGA1700', 'DDR4', 'mATX', null, null, null, 8],
+            ['carte_mere', 'MSI', 'MAG Z790 Tomahawk', '🔌', 279, 'ATX, LGA1700, DDR5, pour CPU débridés (overclocking).', 'LGA1700', 'DDR5', 'ATX', null, null, null, 6],
+            ['carte_mere', 'ASUS', 'ROG Strix Z790-I', '🔌', 399, 'Mini-ITX, LGA1700, DDR5, format compact premium.', 'LGA1700', 'DDR5', 'ITX', null, null, null, 4],
+
+            // --- Mémoire vive ---
+            ['ram', 'Corsair', 'Vengeance LPX 16 Go (2x8) 3200MHz', '🧩', 39, 'DDR4, kit dual channel, dissipateur bas profil.', null, 'DDR4', null, null, null, '16 Go', 15],
+            ['ram', 'Corsair', 'Vengeance LPX 32 Go (2x16) 3200MHz', '🧩', 74, 'DDR4, kit dual channel, idéal multitâche.', null, 'DDR4', null, null, null, '32 Go', 12],
+            ['ram', 'Kingston', 'Fury Beast 16 Go (2x8) 3600MHz', '🧩', 45, 'DDR4, fréquence élevée pour gaming.', null, 'DDR4', null, null, null, '16 Go', 10],
+            ['ram', 'Corsair', 'Vengeance 16 Go (2x8) 5600MHz', '🧩', 59, 'DDR5, kit dual channel nouvelle génération.', null, 'DDR5', null, null, null, '16 Go', 14],
+            ['ram', 'Corsair', 'Vengeance 32 Go (2x16) 6000MHz', '🧩', 109, 'DDR5, référence gaming/création.', null, 'DDR5', null, null, null, '32 Go', 12],
+            ['ram', 'G.Skill', 'Trident Z5 32 Go (2x16) 6400MHz', '🧩', 129, 'DDR5 haute fréquence, RGB.', null, 'DDR5', null, null, null, '32 Go', 8],
+            ['ram', 'Corsair', 'Vengeance 64 Go (2x32) 5600MHz', '🧩', 219, 'DDR5, gros volume pour montage vidéo/3D.', null, 'DDR5', null, null, null, '64 Go', 5],
+
+            // --- Cartes graphiques ---
+            ['gpu', '—', 'Sans carte graphique dédiée (iGPU)', '🎮', 0, 'Utilise le circuit graphique intégré du processeur (si disponible).', null, null, null, null, 0, null, 999],
+            ['gpu', 'AMD', 'Radeon RX 7600', '🎮', 289, '8 Go VRAM, 1080p fluide.', null, null, null, null, 165, '8 Go VRAM', 8],
+            ['gpu', 'NVIDIA', 'GeForce RTX 4060', '🎮', 319, '8 Go VRAM, très bon rapport prix/1080p-1440p.', null, null, null, null, 115, '8 Go VRAM', 10],
+            ['gpu', 'NVIDIA', 'GeForce RTX 4060 Ti', '🎮', 429, '8 Go VRAM, confortable en 1440p.', null, null, null, null, 160, '8 Go VRAM', 8],
+            ['gpu', 'AMD', 'Radeon RX 7800 XT', '🎮', 549, '16 Go VRAM, excellent en 1440p.', null, null, null, null, 263, '16 Go VRAM', 6],
+            ['gpu', 'NVIDIA', 'GeForce RTX 4070 Super', '🎮', 649, '12 Go VRAM, très polyvalente 1440p/4K.', null, null, null, null, 220, '12 Go VRAM', 6],
+            ['gpu', 'NVIDIA', 'GeForce RTX 4070 Ti Super', '🎮', 899, '16 Go VRAM, 4K confortable.', null, null, null, null, 285, '16 Go VRAM', 4],
+            ['gpu', 'NVIDIA', 'GeForce RTX 4080 Super', '🎮', 1149, '16 Go VRAM, haut de gamme 4K.', null, null, null, null, 320, '16 Go VRAM', 3],
+
+            // --- Stockage ---
+            ['stockage', 'Crucial', 'SSD SATA 1 To MX500', '💾', 59, 'SSD SATA fiable, bon rapport capacité/prix.', null, null, null, null, null, '1 To', 15],
+            ['stockage', 'Samsung', 'SSD NVMe 980 500 Go', '💾', 39, 'NVMe rapide pour système d\'exploitation.', null, null, null, null, null, '500 Go', 15],
+            ['stockage', 'Samsung', 'SSD NVMe 990 Pro 1 To', '💾', 89, 'NVMe haut de gamme, très rapide.', null, null, null, null, null, '1 To', 10],
+            ['stockage', 'WD', 'SSD NVMe Black SN850X 2 To', '💾', 159, 'NVMe très haut de gamme, gaming/création.', null, null, null, null, null, '2 To', 6],
+            ['stockage', 'Seagate', 'HDD Barracuda 2 To', '💾', 54, 'Disque dur pour stockage de masse économique.', null, null, null, null, null, '2 To', 10],
+            ['stockage', 'WD', 'HDD Blue 4 To', '💾', 89, 'Disque dur grande capacité pour archivage/médias.', null, null, null, null, null, '4 To', 8],
+
+            // --- Alimentations ---
+            ['alimentation', 'Corsair', 'CV550 550W 80+ Bronze', '🔋', 54, 'Alimentation pour configuration sans carte graphique dédiée ou d\'entrée de gamme.', null, null, null, 550, null, null, 10],
+            ['alimentation', 'Corsair', 'RM650 650W 80+ Gold', '🔋', 79, 'Alimentation semi-modulaire, bon rendement.', null, null, null, 650, null, null, 10],
+            ['alimentation', 'Corsair', 'RM750 750W 80+ Gold', '🔋', 99, 'Pour configurations gaming milieu/haut de gamme.', null, null, null, 750, null, null, 10],
+            ['alimentation', 'be quiet!', 'Straight Power 850W 80+ Gold', '🔋', 129, 'Pour cartes graphiques haut de gamme, très silencieuse.', null, null, null, 850, null, null, 6],
+            ['alimentation', 'Corsair', 'HX1000 1000W 80+ Platinum', '🔋', 179, 'Pour configurations très haut de gamme.', null, null, null, 1000, null, null, 4],
+
+            // --- Boîtiers ---
+            ['boitier', 'NZXT', 'Mini-ITX Compact', '🖥️', 69, 'Boîtier compact pour carte mère Mini-ITX uniquement.', null, null, 'ITX', null, null, null, 8],
+            ['boitier', 'Fractal Design', 'Meshify Compact mATX', '🖥️', 79, 'Boîtier compact bien ventilé, mATX/ITX.', null, null, 'mATX,ITX', null, null, null, 8],
+            ['boitier', 'NZXT', 'H5 Flow ATX Gaming', '🖥️', 89, 'Boîtier ATX aéré avec panneau vitré RGB.', null, null, 'ATX,mATX,ITX', null, null, null, 10],
+            ['boitier', 'be quiet!', 'Pure Base 500DX Silencieux', '🖥️', 129, 'Boîtier ATX silencieux, excellente ventilation.', null, null, 'ATX,mATX,ITX', null, null, null, 8],
+            ['boitier', 'Fractal Design', 'Define 7 Full Tower', '🖥️', 159, 'Grand boîtier ATX, nombreux emplacements de stockage.', null, null, 'ATX,mATX,ITX', null, null, null, 5],
+
+            // --- Refroidissement ---
+            ['refroidissement', '—', 'Ventirad d\'origine', '❄️', 0, 'Ventirad fourni avec le processeur, refroidissement standard.', 'universel', null, null, null, null, null, 999],
+            ['refroidissement', 'Cooler Master', 'Hyper 212 (tour 120mm)', '❄️', 29, 'Ventirad tour, bon compromis silence/performance.', 'universel', null, null, null, null, null, 10],
+            ['refroidissement', 'Noctua', 'NH-U12S (tour 120mm haut de gamme)', '❄️', 59, 'Ventirad tour premium, très silencieux.', 'universel', null, null, null, null, null, 6],
+            ['refroidissement', 'Corsair', 'iCUE 240mm AIO', '❄️', 89, 'Watercooling tout-en-un 240mm.', 'universel', null, null, null, null, null, 6],
+            ['refroidissement', 'Corsair', 'iCUE 360mm AIO', '❄️', 129, 'Watercooling tout-en-un 360mm, pour CPU haut de gamme.', 'universel', null, null, null, null, null, 4],
+
+            // --- Système d'exploitation ---
+            ['os', 'Microsoft', 'Windows 11 Famille (OEM)', '💽', 109, 'Licence OEM, préinstallation en boutique possible.', null, null, null, null, null, null, 999],
+            ['os', 'Microsoft', 'Windows 11 Pro (OEM)', '💽', 149, 'Licence OEM Pro, chiffrement BitLocker et Bureau à distance.', null, null, null, null, null, null, 999],
+            ['os', '—', 'Sans système d\'exploitation', '💽', 0, 'Vous installez vous-même votre OS (Linux, licence existante...).', null, null, null, null, null, null, 999],
+        ];
+        $ins = $pdo->prepare('INSERT INTO composants_pc (type, marque, nom, icone, prix, description, socket, ram_type, form_factor, wattage, power_draw, capacite, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        foreach ($composants as $c) {
+            $ins->execute($c);
         }
     }
 

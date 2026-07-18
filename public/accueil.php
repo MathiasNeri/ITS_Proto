@@ -338,7 +338,17 @@ $user_role = $_SESSION['user_role'] ?? '';
         </div>
     </div>
     </section>
-    
+
+    <!-- Configurateur PC -->
+    <section id="configurateur-teaser" style="background: var(--surface); border: 2px solid var(--surface-alt); border-radius: 12px; padding: 2.5rem 2rem; text-align: center; margin-bottom: 3rem;">
+        <h2 style="color: var(--accent); margin-bottom: .8rem; font-size: 1.6rem;">🖥️ Configurateur PC sur mesure</h2>
+        <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto 1.5rem; line-height: 1.6;">
+            Assemblez votre PC composant par composant : le configurateur vérifie automatiquement la compatibilité
+            (socket, mémoire, boîtier) et calcule le prix en temps réel. Envoyez-nous votre configuration pour un devis détaillé.
+        </p>
+        <a href="configurateur.php" class="action-btn primary">Lancer le configurateur</a>
+    </section>
+
     <!-- OS Support -->
     <section id="reparations">
     <div class="os-grid">
