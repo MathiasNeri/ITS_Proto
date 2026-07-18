@@ -20,9 +20,8 @@ Placez vos images dans ce dossier avec les noms suivants :
 - **Icônes FontAwesome intégrées** - Pas besoin d'images, les vraies icônes sont déjà dans le code
 - Windows (bleu #0078D4), Apple (gris #A6A6A6), Linux (orange #F7931E), Android (vert #3DDC84), iOS (bleu #007AFF)
 
-### Boutiques
+### Boutique
 - `boutique-pierrefeu.jpg` - Photo boutique Pierrefeu
-- `boutique-sollies.jpg` - Photo boutique Solliès-Pont
 
 ### Réseaux sociaux
 - **Icônes SVG intégrées** - Pas besoin d'images, les icônes sont déjà dans le code

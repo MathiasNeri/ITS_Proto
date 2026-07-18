@@ -207,28 +207,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
                 </div>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="boutique">Boutique *</label>
-                    <select id="boutique" name="boutique" required>
-                        <option value="">Sélectionner une boutique</option>
-                        <option value="Solliès-Pont" <?php echo (($_POST['boutique'] ?? '') === 'Solliès-Pont') ? 'selected' : ''; ?>>Solliès-Pont</option>
-                        <option value="Pierrefeu" <?php echo (($_POST['boutique'] ?? '') === 'Pierrefeu') ? 'selected' : ''; ?>>Pierrefeu</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="service">Service *</label>
-                    <select id="service" name="service" required>
-                        <option value="">Sélectionner un service</option>
-                        <option value="Diagnostic" <?php echo (($_POST['service'] ?? '') === 'Diagnostic') ? 'selected' : ''; ?>>Diagnostic</option>
-                        <option value="Réparation ordinateur" <?php echo (($_POST['service'] ?? '') === 'Réparation ordinateur') ? 'selected' : ''; ?>>Réparation ordinateur</option>
-                        <option value="Réparation téléphone" <?php echo (($_POST['service'] ?? '') === 'Réparation téléphone') ? 'selected' : ''; ?>>Réparation téléphone</option>
-                        <option value="Réparation tablette" <?php echo (($_POST['service'] ?? '') === 'Réparation tablette') ? 'selected' : ''; ?>>Réparation tablette</option>
-                        <option value="Vente" <?php echo (($_POST['service'] ?? '') === 'Vente') ? 'selected' : ''; ?>>Vente</option>
-                        <option value="Autre" <?php echo (($_POST['service'] ?? '') === 'Autre') ? 'selected' : ''; ?>>Autre</option>
-                    </select>
-                </div>
+            <input type="hidden" name="boutique" value="Pierrefeu">
+
+            <div class="form-group">
+                <label for="service">Service *</label>
+                <select id="service" name="service" required>
+                    <option value="">Sélectionner un service</option>
+                    <option value="Diagnostic" <?php echo (($_POST['service'] ?? '') === 'Diagnostic') ? 'selected' : ''; ?>>Diagnostic</option>
+                    <option value="Réparation ordinateur" <?php echo (($_POST['service'] ?? '') === 'Réparation ordinateur') ? 'selected' : ''; ?>>Réparation ordinateur</option>
+                    <option value="Réparation téléphone" <?php echo (($_POST['service'] ?? '') === 'Réparation téléphone') ? 'selected' : ''; ?>>Réparation téléphone</option>
+                    <option value="Réparation tablette" <?php echo (($_POST['service'] ?? '') === 'Réparation tablette') ? 'selected' : ''; ?>>Réparation tablette</option>
+                    <option value="Vente" <?php echo (($_POST['service'] ?? '') === 'Vente') ? 'selected' : ''; ?>>Vente</option>
+                    <option value="Autre" <?php echo (($_POST['service'] ?? '') === 'Autre') ? 'selected' : ''; ?>>Autre</option>
+                </select>
             </div>
             
             <div class="form-group">

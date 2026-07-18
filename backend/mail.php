@@ -141,7 +141,7 @@ function emailTemplate($titre, $contenuHtml) {
             ' . $contenuHtml . '
         </div>
         <p style="text-align: center; color: #8a9399; font-size: 12px; margin-top: 16px;">
-            ITS — Solliès-Pont &amp; Pierrefeu &middot; contact@its-reparation.fr
+            ITS — Pierrefeu &middot; contact@its-reparation.fr
         </p>
     </div>';
 }

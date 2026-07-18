@@ -7,6 +7,10 @@ if (session_status() === PHP_SESSION_NONE) {
 $is_logged_in = checkAuth();
 $user_role = $_SESSION['user_role'] ?? '';
 
+if (!$is_logged_in) {
+    redirect('connexion.php?redirect=commande.php');
+}
+
 $pdo = initDatabase();
 $cart = (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) ? $_SESSION['cart'] : [];
 
@@ -415,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'comma
                         <div class="shipping-option <?php echo $modeLivraison === 'boutique' ? 'active' : ''; ?>">
                             <button type="submit" name="mode_livraison" value="boutique">
                                 <strong>🏬 Retrait en boutique</strong>
-                                <span>Gratuit — Solliès-Pont ou Pierrefeu</span>
+                                <span>Gratuit — boutique de Pierrefeu</span>
                             </button>
                         </div>
                         <div class="shipping-option <?php echo $modeLivraison === 'colissimo' ? 'active' : ''; ?>">

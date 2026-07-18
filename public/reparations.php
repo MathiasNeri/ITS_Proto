@@ -6,6 +6,56 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $is_logged_in = checkAuth();
 $user_role = $_SESSION['user_role'] ?? '';
+
+$success = '';
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
+    $materiel = trim($_POST['materiel'] ?? '');
+    $nom = trim($_POST['nom'] ?? '');
+    $prenom = trim($_POST['prenom'] ?? '');
+    $adresse = trim($_POST['adresse'] ?? '');
+    $code_postal = trim($_POST['code_postal'] ?? '');
+    $ville = trim($_POST['ville'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $telephone = trim($_POST['telephone'] ?? '');
+    $message = trim($_POST['message'] ?? '');
+    $consentement = isset($_POST['consentement']);
+
+    if (!csrfVerify()) {
+        $error = 'Session expirée, merci de réessayer.';
+    } elseif (empty($materiel) || empty($nom) || empty($prenom) || empty($adresse) || empty($code_postal) || empty($ville) || empty($email) || empty($telephone)) {
+        $error = 'Tous les champs obligatoires doivent être remplis.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Email invalide.';
+    } elseif (!$consentement) {
+        $error = 'Merci d\'accepter l\'utilisation de vos données pour traiter votre demande.';
+    } else {
+        $fichier = traiterUploadDevis($_FILES['fichier'] ?? null);
+
+        if ($fichier['erreur']) {
+            $error = $fichier['erreur'];
+        } else {
+            $pdo = initDatabase();
+            $stmt = $pdo->prepare('INSERT INTO devis (materiel, nom, prenom, adresse, code_postal, ville, email, telephone, boutique, message, fichier_nom, fichier_chemin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+
+            if ($stmt->execute([$materiel, $nom, $prenom, $adresse, $code_postal, $ville, $email, $telephone, 'Pierrefeu', $message, $fichier['nom'], $fichier['chemin']])) {
+                envoyerEmailsDevis([
+                    'materiel' => $materiel,
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'email' => $email,
+                    'telephone' => $telephone,
+                    'message' => $message,
+                ]);
+                $success = 'Votre demande de devis a bien été envoyée ! Nous revenons vers vous rapidement.';
+                $_POST = [];
+            } else {
+                $error = 'Erreur lors de l\'envoi de la demande.';
+            }
+        }
+    }
+}
 ?>
 <?php include 'header.php'; ?>
 
@@ -117,6 +167,148 @@ $user_role = $_SESSION['user_role'] ?? '';
         background: var(--accent-hover);
     }
 
+    .devis-section {
+        margin-bottom: 3rem;
+    }
+
+    .devis-layout {
+        display: grid;
+        grid-template-columns: 150px 1fr 150px;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .brand-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .brand-badge {
+        background: var(--surface-alt);
+        border-radius: 8px;
+        padding: 0.9rem 0.5rem;
+        text-align: center;
+        color: var(--text-muted);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        font-size: 0.95rem;
+    }
+
+    .devis-form-card {
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
+        border-radius: 12px;
+        padding: 2rem;
+    }
+
+    .devis-form .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .devis-form .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .devis-form .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-muted);
+        font-weight: bold;
+    }
+
+    .devis-form .form-group input,
+    .devis-form .form-group select,
+    .devis-form .form-group textarea {
+        width: 100%;
+        padding: 0.8rem;
+        border: 2px solid var(--surface-alt);
+        border-radius: 5px;
+        background: var(--surface-deep);
+        color: var(--text);
+        font-size: 1rem;
+    }
+
+    .devis-form .form-group input:focus,
+    .devis-form .form-group select:focus,
+    .devis-form .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .devis-form .form-group textarea {
+        height: 100px;
+        resize: vertical;
+    }
+
+    .devis-form .form-group input[readonly] {
+        opacity: 0.75;
+        cursor: not-allowed;
+    }
+
+    .file-upload-group {
+        margin-bottom: 1rem;
+    }
+
+    .file-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--surface-alt);
+        color: var(--text);
+        padding: 0.7rem 1.2rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s;
+    }
+
+    .file-label:hover {
+        background: var(--accent);
+    }
+
+    .file-label input[type="file"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        opacity: 0;
+    }
+
+    .file-name {
+        margin-left: 0.8rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .file-hint {
+        display: block;
+        margin-top: 0.4rem;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .checkbox-group input {
+        width: auto;
+        margin-top: 0.3rem;
+    }
+
+    .checkbox-group label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
     @media (max-width: 480px) {
         .page-container {
             padding: 0 1.2rem;
@@ -128,7 +320,36 @@ $user_role = $_SESSION['user_role'] ?? '';
             grid-template-columns: 1fr;
         }
     }
+
+    @media (max-width: 900px) {
+        .devis-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .brand-column {
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .brand-badge {
+            flex: 1 1 120px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .devis-form .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
+
+<script>
+    function updateFileName(input) {
+        const span = document.getElementById('file-name-display');
+        span.textContent = input.files.length ? input.files[0].name : '';
+    }
+</script>
 
 <main class="main-content">
     <div class="page-container">
@@ -214,8 +435,124 @@ $user_role = $_SESSION['user_role'] ?? '';
             </div>
         </div>
         
-        <div class="cta-section">
-            <a href="accueil.php#contact" class="cta-btn">Prendre rendez-vous</a>
+        <div class="devis-section" id="devis">
+            <h2 style="color: var(--accent); text-align: center; margin-bottom: 2rem;">Demande de Devis / Réparation</h2>
+
+            <?php if ($success): ?>
+                <div class="message success" style="padding:1rem; border-radius:5px; margin-bottom:1.5rem; text-align:center; background: var(--success); color: var(--text);"><?php echo htmlspecialchars($success); ?></div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="message error" style="padding:1rem; border-radius:5px; margin-bottom:1.5rem; text-align:center; background: var(--accent); color: var(--text);"><?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+
+            <div class="devis-layout">
+                <div class="brand-column">
+                    <div class="brand-badge">SAMSUNG</div>
+                    <div class="brand-badge">HUAWEI</div>
+                    <div class="brand-badge">XIAOMI</div>
+                    <div class="brand-badge">AMD</div>
+                    <div class="brand-badge">OPPO</div>
+                    <div class="brand-badge">PACKARD BELL</div>
+                    <div class="brand-badge">SEAGATE</div>
+                </div>
+
+                <div class="devis-form-card">
+                    <form method="POST" class="devis-form" enctype="multipart/form-data">
+                        <?php echo csrfField(); ?>
+
+                        <div class="form-group">
+                            <label for="materiel">Type de matériel *</label>
+                            <select id="materiel" name="materiel" required>
+                                <option value="">Sélectionner un type</option>
+                                <?php $materiels = ['Ordinateur portable', 'Ordinateur de bureau', 'Smartphone', 'Tablette', 'Console de jeux', 'Imprimante', 'Autre']; ?>
+                                <?php foreach ($materiels as $m): ?>
+                                    <option value="<?php echo htmlspecialchars($m); ?>" <?php echo (($_POST['materiel'] ?? '') === $m) ? 'selected' : ''; ?>><?php echo htmlspecialchars($m); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="nom">Nom *</label>
+                                <input type="text" id="nom" name="nom" value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prenom">Prénom *</label>
+                                <input type="text" id="prenom" name="prenom" value="<?php echo htmlspecialchars($_POST['prenom'] ?? ''); ?>" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adresse">Adresse *</label>
+                            <input type="text" id="adresse" name="adresse" value="<?php echo htmlspecialchars($_POST['adresse'] ?? ''); ?>" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="code_postal">Code Postal *</label>
+                                <input type="text" id="code_postal" name="code_postal" value="<?php echo htmlspecialchars($_POST['code_postal'] ?? ''); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ville">Ville *</label>
+                                <input type="text" id="ville" name="ville" value="<?php echo htmlspecialchars($_POST['ville'] ?? ''); ?>" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="telephone">Téléphone *</label>
+                                <input type="tel" id="telephone" name="telephone" value="<?php echo htmlspecialchars($_POST['telephone'] ?? ''); ?>" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="boutique">Boutique</label>
+                            <input type="text" id="boutique" value="ITS — Pierrefeu" readonly>
+                            <input type="hidden" name="boutique" value="Pierrefeu">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message">Infos Complémentaires</label>
+                            <textarea id="message" name="message" placeholder="Décrivez la panne ou votre demande..."><?php echo htmlspecialchars($_POST['message'] ?? ''); ?></textarea>
+                        </div>
+
+                        <div class="file-upload-group">
+                            <label class="file-label" for="fichier">
+                                📎 Ajouter un fichier
+                                <input type="file" id="fichier" name="fichier" accept=".pdf,.docx,.jpg,.jpeg,.png,.rtf,.txt" onchange="updateFileName(this)">
+                            </label>
+                            <span class="file-name" id="file-name-display"></span>
+                            <span class="file-hint">Formats acceptés : PDF, DOCX, JPG, PNG, RTF, TXT — 5 Mo max.</span>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="consentement" name="consentement" required>
+                            <label for="consentement">J'accepte que mes données soient utilisées pour traiter ma demande de devis. *</label>
+                        </div>
+
+                        <button type="submit" class="btn-submit" style="background: var(--accent); color: var(--text); padding: 1rem 2rem; border: none; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%;">Envoyer</button>
+                    </form>
+                </div>
+
+                <div class="brand-column">
+                    <div class="brand-badge">ASUS</div>
+                    <div class="brand-badge">HP</div>
+                    <div class="brand-badge">LENOVO</div>
+                    <div class="brand-badge">KINGSTON</div>
+                    <div class="brand-badge">ATI</div>
+                    <div class="brand-badge">WD</div>
+                    <div class="brand-badge">TOSHIBA</div>
+                    <div class="brand-badge">DELL</div>
+                </div>
+            </div>
         </div>
     </div>
 </main>

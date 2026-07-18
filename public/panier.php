@@ -287,7 +287,10 @@ if (!empty($cart)) {
                 <span>Total</span>
                 <span><?php echo number_format($total, 2, ',', ' '); ?> €</span>
             </div>
-            <a href="commande.php" class="checkout-btn">Passer commande</a>
+            <a href="<?php echo $is_logged_in ? 'commande.php' : 'connexion.php?redirect=commande.php'; ?>" class="checkout-btn">Passer commande</a>
+            <?php if (!$is_logged_in): ?>
+                <p style="text-align:center; color: var(--text-muted); font-size:.85rem; margin-top:.6rem;">Connectez-vous pour finaliser votre commande.</p>
+            <?php endif; ?>
         <?php else: ?>
             <a href="boutique.php" class="checkout-btn">Retour à la boutique</a>
         <?php endif; ?>

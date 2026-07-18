@@ -166,6 +166,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 2rem;
         margin-top: 2rem;
+        max-width: 340px;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     .location-card {
@@ -241,8 +244,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="info-item">
                     <div class="info-icon">📍</div>
                     <div class="info-text">
-                        <div class="info-label">Adresses</div>
-                        <div>Solliès-Pont & Pierrefeu</div>
+                        <div class="info-label">Adresse</div>
+                        <div>Pierrefeu</div>
                     </div>
                 </div>
             </div>
@@ -285,20 +288,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <div class="locations-section">
-            <h3 class="info-title" style="text-align: center;">Nos boutiques</h3>
+            <h3 class="info-title" style="text-align: center;">Notre boutique</h3>
             <div class="locations-grid">
-                <div class="location-card">
-                    <h4 class="location-name">Solliès-Pont</h4>
-                    <div class="location-address">
-                        123 Rue de la République<br>
-                        83210 Solliès-Pont
-                    </div>
-                    <div class="location-hours">
-                        Lun-Ven: 9h-18h<br>
-                        Samedi: 9h-12h
-                    </div>
-                </div>
-                
                 <div class="location-card">
                     <h4 class="location-name">Pierrefeu</h4>
                     <div class="location-address">

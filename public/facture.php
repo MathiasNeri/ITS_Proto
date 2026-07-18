@@ -200,7 +200,7 @@ $sousTotal = array_sum(array_map(function ($l) { return $l['prix_unitaire'] * $l
             <div class="company">
                 <strong>ITS — Informatique Téléphonie Service</strong><br>
                 S.A.S INFOCOM PIERREFEU<br>
-                Solliès-Pont &amp; Pierrefeu<br>
+                Pierrefeu<br>
                 contact@its-reparation.fr<br>
                 SIRET : 893 676 023 00011<br>
                 TVA : FR73893676023
@@ -247,7 +247,7 @@ $sousTotal = array_sum(array_map(function ($l) { return $l['prix_unitaire'] * $l
         </div>
 
         <div class="footer-note">
-            ITS — Informatique Téléphonie Service (S.A.S INFOCOM PIERREFEU) · Solliès-Pont &amp; Pierrefeu · SIRET 893 676 023 00011 · TVA FR73893676023 · Prix TTC, TVA au taux normal de 20 % incluse
+            ITS — Informatique Téléphonie Service (S.A.S INFOCOM PIERREFEU) · Pierrefeu · SIRET 893 676 023 00011 · TVA FR73893676023 · Prix TTC, TVA au taux normal de 20 % incluse
         </div>
     </div>
 </body>

@@ -5,9 +5,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Si déjà connecté, rediriger vers l'accueil
+$redirectTarget = safeRedirectTarget($_POST['redirect'] ?? $_GET['redirect'] ?? null);
+
+// Si déjà connecté, rediriger vers l'accueil (ou la page demandée)
 if (checkAuth()) {
-    redirect('accueil.php');
+    redirect($redirectTarget);
 }
 
 $error = '';
@@ -177,6 +179,7 @@ if ($_POST && !csrfVerify()) {
         
         <form method="POST">
             <?php echo csrfField(); ?>
+            <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirectTarget); ?>">
             <div class="form-group">
                 <label for="nom">Nom :</label>
                 <input type="text" id="nom" name="nom" value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>" required>
@@ -206,7 +209,7 @@ if ($_POST && !csrfVerify()) {
         </form>
         
         <div class="login-link">
-            <p>Déjà un compte ? <a href="connexion.php">Se connecter</a></p>
+            <p>Déjà un compte ? <a href="connexion.php?redirect=<?php echo urlencode($redirectTarget); ?>">Se connecter</a></p>
         </div>
     </div>
 </div>

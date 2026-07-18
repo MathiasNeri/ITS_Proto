@@ -11,6 +11,9 @@
 *.sqlite3
 database.sqlite
 
+# Fichiers joints uploadés par les clients (demandes de devis)
+database/uploads/
+
 # Logs
 *.log
 logs/

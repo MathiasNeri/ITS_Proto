@@ -192,6 +192,24 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS devis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        materiel TEXT NOT NULL,
+        nom TEXT NOT NULL,
+        prenom TEXT NOT NULL,
+        adresse TEXT NOT NULL,
+        code_postal TEXT NOT NULL,
+        ville TEXT NOT NULL,
+        email TEXT NOT NULL,
+        telephone TEXT NOT NULL,
+        boutique TEXT NOT NULL,
+        message TEXT,
+        fichier_nom TEXT,
+        fichier_chemin TEXT,
+        statut TEXT NOT NULL DEFAULT 'nouveau',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
     // Migrations légères pour les bases créées avant l'ajout de ces colonnes
     if (!columnExists($pdo, 'produits', 'stock')) {
         $pdo->exec("ALTER TABLE produits ADD COLUMN stock INTEGER NOT NULL DEFAULT 0");
@@ -285,6 +303,18 @@ function redirect($path) {
 }
 
 /**
+ * Valide une cible de redirection post-connexion venant de l'utilisateur
+ * (paramètre ?redirect=) : n'autorise qu'un nom de fichier .php local, pour
+ * éviter toute redirection ouverte vers un autre site.
+ */
+function safeRedirectTarget($value, $default = 'accueil.php') {
+    if (is_string($value) && preg_match('/^[a-zA-Z0-9_-]+\.php$/', $value)) {
+        return $value;
+    }
+    return $default;
+}
+
+/**
  * Journalise une erreur backend (log PHP standard, jamais affiché au visiteur).
  */
 function logError($message) {
@@ -373,6 +403,7 @@ function isSmtpConfigured() {
 require_once __DIR__ . '/mail.php';
 require_once __DIR__ . '/stripe.php';
 require_once __DIR__ . '/commandes.php';
+require_once __DIR__ . '/devis.php';
 
 // La base doit exister dès le chargement de la config (ex: profil.php
 // ouvre une connexion directe sans repasser par initDatabase()).

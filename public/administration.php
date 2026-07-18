@@ -33,6 +33,12 @@ $statuts = [
     'livree'              => 'Livrée / retirée',
     'annulee'             => 'Annulée',
 ];
+$statuts_devis = [
+    'nouveau'  => 'Nouveau',
+    'en_cours' => 'En cours',
+    'traite'   => 'Traité',
+    'annule'   => 'Annulé',
+];
 
 $message = '';
 $error = '';
@@ -123,6 +129,23 @@ if ($_POST) {
             } elseif ($action === 'mark_message_lu' && isset($_POST['message_id'])) {
                 $pdo->prepare('UPDATE messages SET lu = 1 WHERE id = ?')->execute([$_POST['message_id']]);
                 $message = 'Message marqué comme lu';
+            } elseif ($action === 'update_statut_devis' && isset($_POST['devis_id'], $_POST['statut'])) {
+                if (array_key_exists($_POST['statut'], $statuts_devis)) {
+                    $pdo->prepare('UPDATE devis SET statut = ? WHERE id = ?')->execute([$_POST['statut'], $_POST['devis_id']]);
+                    $message = 'Statut de la demande de devis mis à jour';
+                }
+            } elseif ($action === 'delete_devis' && isset($_POST['devis_id'])) {
+                $stmt = $pdo->prepare('SELECT fichier_chemin FROM devis WHERE id = ?');
+                $stmt->execute([$_POST['devis_id']]);
+                $fichierChemin = $stmt->fetchColumn();
+                if ($fichierChemin) {
+                    $chemin = __DIR__ . '/../database/uploads/devis/' . basename($fichierChemin);
+                    if (is_file($chemin)) {
+                        unlink($chemin);
+                    }
+                }
+                $pdo->prepare('DELETE FROM devis WHERE id = ?')->execute([$_POST['devis_id']]);
+                $message = 'Demande de devis supprimée';
             }
         } catch (PDOException $e) {
             $error = 'Erreur lors du traitement de l\'action';
@@ -134,6 +157,7 @@ if ($_POST) {
 // Récupérer les données
 try {
     $rdv_list = $pdo->query('SELECT * FROM rdv ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $devis_list = $pdo->query('SELECT * FROM devis ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
     $users_list = $pdo->query('SELECT * FROM users ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
     $produits_list = $pdo->query('SELECT * FROM produits ORDER BY id DESC')->fetchAll(PDO::FETCH_ASSOC);
     $commandes_list = $pdo->query('SELECT * FROM commandes ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
@@ -151,7 +175,7 @@ try {
 } catch (PDOException $e) {
     $error = 'Erreur lors du chargement des données';
     logError($e->getMessage());
-    $rdv_list = $users_list = $produits_list = $commandes_list = $messages_list = $emails_list = $promos_list = $avis_list = [];
+    $rdv_list = $devis_list = $users_list = $produits_list = $commandes_list = $messages_list = $emails_list = $promos_list = $avis_list = [];
     $lignesParCommande = [];
 }
 
@@ -452,6 +476,10 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
                 <div class="stat-label">Rendez-vous</div>
             </div>
             <div class="stat-card">
+                <div class="stat-number"><?php echo count($devis_list); ?></div>
+                <div class="stat-label">Demandes de devis</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-number"><?php echo count($users_list); ?></div>
                 <div class="stat-label">Utilisateurs</div>
             </div>
@@ -478,6 +506,7 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
 
         <div class="tabs" id="adminTabs">
             <button type="button" class="tab-btn active" data-tab="rdv">Rendez-vous</button>
+            <button type="button" class="tab-btn" data-tab="devis">Devis</button>
             <button type="button" class="tab-btn" data-tab="commandes">Commandes</button>
             <button type="button" class="tab-btn" data-tab="produits">Produits</button>
             <button type="button" class="tab-btn" data-tab="promos">Codes promo</button>
@@ -516,6 +545,62 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
                         <?php endforeach; ?>
                         <?php if (empty($rdv_list)): ?>
                             <tr><td colspan="6">Aucun rendez-vous pour le moment.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEVIS -->
+        <div class="tab-panel" id="tab-devis">
+            <div class="admin-card">
+                <h3 class="card-title">Demandes de devis</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Client</th><th>Matériel</th><th>Contact</th><th>Adresse</th><th>Message</th><th>Fichier</th><th>Date</th><th>Statut</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($devis_list as $d): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($d['prenom'] . ' ' . $d['nom']); ?></td>
+                            <td><?php echo htmlspecialchars($d['materiel']); ?></td>
+                            <td><?php echo htmlspecialchars($d['email']); ?><br><span style="font-size:.72rem;"><?php echo htmlspecialchars($d['telephone']); ?></span></td>
+                            <td style="max-width:180px;"><?php echo htmlspecialchars($d['adresse'] . ', ' . $d['code_postal'] . ' ' . $d['ville']); ?></td>
+                            <td style="max-width:220px;"><?php echo nl2br(htmlspecialchars($d['message'] ?? '')); ?></td>
+                            <td>
+                                <?php if (!empty($d['fichier_chemin'])): ?>
+                                    <a href="devis-fichier.php?id=<?php echo $d['id']; ?>" class="btn-small" style="text-decoration:none;display:inline-block;">Télécharger</a>
+                                <?php else: ?>
+                                    —
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo date('d/m/Y', strtotime($d['created_at'])); ?></td>
+                            <td>
+                                <form method="POST" class="inline-form">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="update_statut_devis">
+                                    <input type="hidden" name="devis_id" value="<?php echo $d['id']; ?>">
+                                    <select name="statut" onchange="this.form.submit()">
+                                        <?php foreach ($statuts_devis as $key => $label): ?>
+                                            <option value="<?php echo $key; ?>" <?php echo $d['statut'] === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="POST" onsubmit="return confirm('Supprimer cette demande de devis ?')">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="delete_devis">
+                                    <input type="hidden" name="devis_id" value="<?php echo $d['id']; ?>">
+                                    <button type="submit" class="btn-delete">Suppr.</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($devis_list)): ?>
+                            <tr><td colspan="9">Aucune demande de devis pour le moment.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>

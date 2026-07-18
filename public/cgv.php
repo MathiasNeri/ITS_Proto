@@ -58,7 +58,7 @@ $user_role = $_SESSION['user_role'] ?? '';
         <p class="maj">Dernière mise à jour : <?php echo date('d/m/Y'); ?></p>
 
         <h2>1. Objet</h2>
-        <p>Les présentes conditions générales de vente régissent les ventes de produits (téléphones, ordinateurs, tablettes, pièces détachées, accessoires) et de prestations de réparation réalisées par ITS, que ce soit en boutique (Solliès-Pont, Pierrefeu) ou via ce site.</p>
+        <p>Les présentes conditions générales de vente régissent les ventes de produits (téléphones, ordinateurs, tablettes, pièces détachées, accessoires) et de prestations de réparation réalisées par ITS, que ce soit en boutique (Pierrefeu) ou via ce site.</p>
 
         <h2>2. Prix</h2>
         <p>Les prix sont indiqués en euros, toutes taxes comprises (TVA française en vigueur). ITS se réserve le droit de modifier ses prix à tout moment, les produits étant facturés sur la base du tarif en vigueur au moment de la validation de la commande.</p>
@@ -68,7 +68,7 @@ $user_role = $_SESSION['user_role'] ?? '';
 
         <h2>4. Livraison</h2>
         <ul>
-            <li><strong>Retrait en boutique</strong> : gratuit, sur les boutiques de Solliès-Pont et Pierrefeu, dès notification de disponibilité.</li>
+            <li><strong>Retrait en boutique</strong> : gratuit, sur notre boutique de Pierrefeu, dès notification de disponibilité.</li>
             <li><strong>Livraison à domicile</strong> : via Colissimo, frais indiqués lors de la commande, livraison gratuite au-delà du montant affiché au panier.</li>
         </ul>
 

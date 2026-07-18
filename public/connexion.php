@@ -5,9 +5,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Si déjà connecté, rediriger vers l'accueil
+$redirectTarget = safeRedirectTarget($_POST['redirect'] ?? $_GET['redirect'] ?? null);
+
+// Si déjà connecté, rediriger vers l'accueil (ou la page demandée)
 if (checkAuth()) {
-    redirect('accueil.php');
+    redirect($redirectTarget);
 }
 
 $error = '';
@@ -36,7 +38,7 @@ if ($_POST) {
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_email'] = $user['email'];
                     $_SESSION['user_role'] = $user['role'];
-                    redirect('accueil.php');
+                    redirect($redirectTarget);
                 } else {
                     enregistrerTentativeConnexion($email, false);
                     $error = 'Email ou mot de passe incorrect';
@@ -155,6 +157,7 @@ if ($_POST) {
         
         <form method="POST">
             <?php echo csrfField(); ?>
+            <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirectTarget); ?>">
             <div class="form-group">
                 <label for="email">Email :</label>
                 <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
@@ -170,7 +173,7 @@ if ($_POST) {
 
         <div class="register-link">
             <p><a href="mot-de-passe-oublie.php">Mot de passe oublié ?</a></p>
-            <p>Pas encore de compte ? <a href="inscription.php">S'inscrire</a></p>
+            <p>Pas encore de compte ? <a href="inscription.php?redirect=<?php echo urlencode($redirectTarget); ?>">S'inscrire</a></p>
         </div>
     </div>
 </div>

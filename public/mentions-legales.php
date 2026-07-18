@@ -68,7 +68,7 @@ $user_role = $_SESSION['user_role'] ?? '';
             N° de TVA intracommunautaire : FR73893676023<br>
             Code APE/NAF : 47.41Z (Commerce de détail d'ordinateurs, d'unités périphériques et de logiciels en magasin spécialisé)<br>
             Adresse du siège : <span class="placeholder">[à compléter]</span><br>
-            Boutiques : Solliès-Pont &amp; Pierrefeu<br>
+            Boutique : Pierrefeu<br>
             Téléphone : <span class="placeholder">[à compléter]</span><br>
             Email : contact@its-reparation.fr<br>
             Directeur de la publication : <span class="placeholder">[à compléter]</span>
