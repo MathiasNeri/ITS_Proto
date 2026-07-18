@@ -9,6 +9,7 @@ $user_role = $_SESSION['user_role'] ?? '';
 
 $pdo = initDatabase();
 $cart = (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) ? $_SESSION['cart'] : [];
+$cartCustom = (!empty($_SESSION['cart_custom']) && is_array($_SESSION['cart_custom'])) ? $_SESSION['cart_custom'] : [];
 
 $lignes = [];
 $total = 0;
@@ -33,11 +34,31 @@ if (!empty($cart)) {
         $total += $sousTotal;
         $lignes[] = [
             'id' => $id,
+            'custom' => false,
             'produit' => $p,
             'qty' => $qty,
             'sous_total' => $sousTotal,
         ];
     }
+}
+
+// Configurations PC sur mesure ajoutées depuis configurateur.php
+foreach ($cartCustom as $customId => $entry) {
+    $sousTotal = (float) $entry['prix'];
+    $total += $sousTotal;
+    $lignes[] = [
+        'id' => $customId,
+        'custom' => true,
+        'produit' => [
+            'nom' => $entry['nom'],
+            'prix' => $sousTotal,
+            'icone' => $entry['icone'] ?? '🖥️',
+            'stock' => 999,
+        ],
+        'details' => $entry['details'] ?? '',
+        'qty' => 1,
+        'sous_total' => $sousTotal,
+    ];
 }
 ?>
 <?php include 'header.php'; ?>
@@ -156,6 +177,23 @@ if (!empty($cart)) {
         color: var(--text-muted);
     }
 
+    .cart-config-details {
+        margin-top: .4rem;
+    }
+
+    .cart-config-details summary {
+        cursor: pointer;
+        color: var(--accent-2);
+        font-size: .78rem;
+    }
+
+    .cart-config-details div {
+        margin-top: .4rem;
+        color: var(--text-muted);
+        font-size: .76rem;
+        line-height: 1.5;
+    }
+
     .cart-summary {
         display: flex;
         justify-content: space-between;
@@ -256,24 +294,41 @@ if (!empty($cart)) {
                         <div class="cart-thumb"><?php echo $ligne['produit']['icone']; ?></div>
                         <div class="cart-info">
                             <div class="cn"><?php echo htmlspecialchars($ligne['produit']['nom']); ?></div>
-                            <div class="cp"><?php echo number_format($ligne['produit']['prix'], 2, ',', ' '); ?> € / unité</div>
-                            <?php if ($ligne['qty'] > (int) $ligne['produit']['stock']): ?>
-                                <div class="cp" style="color: var(--accent);">Stock insuffisant, quantité à ajuster</div>
+                            <?php if (!empty($ligne['custom'])): ?>
+                                <div class="cp"><?php echo number_format($ligne['produit']['prix'], 2, ',', ' '); ?> € — configuration sur mesure</div>
+                                <?php if (!empty($ligne['details'])): ?>
+                                    <details class="cart-config-details">
+                                        <summary>Voir le détail des composants</summary>
+                                        <div><?php echo nl2br(htmlspecialchars($ligne['details'])); ?></div>
+                                    </details>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <div class="cp"><?php echo number_format($ligne['produit']['prix'], 2, ',', ' '); ?> € / unité</div>
+                                <?php if ($ligne['qty'] > (int) $ligne['produit']['stock']): ?>
+                                    <div class="cp" style="color: var(--accent);">Stock insuffisant, quantité à ajuster</div>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
-                        <form method="POST" action="cart_action.php" class="qty-form">
-                            <?php echo csrfField(); ?>
-                            <input type="hidden" name="action" value="update">
-                            <input type="hidden" name="produit_id" value="<?php echo (int) $ligne['id']; ?>">
-                            <input type="hidden" name="redirect" value="panier.php">
-                            <input type="number" name="qty" min="1" max="<?php echo (int) $ligne['produit']['stock']; ?>" value="<?php echo (int) $ligne['qty']; ?>">
-                            <button type="submit">Maj</button>
-                        </form>
+                        <?php if (empty($ligne['custom'])): ?>
+                            <form method="POST" action="cart_action.php" class="qty-form">
+                                <?php echo csrfField(); ?>
+                                <input type="hidden" name="action" value="update">
+                                <input type="hidden" name="produit_id" value="<?php echo (int) $ligne['id']; ?>">
+                                <input type="hidden" name="redirect" value="panier.php">
+                                <input type="number" name="qty" min="1" max="<?php echo (int) $ligne['produit']['stock']; ?>" value="<?php echo (int) $ligne['qty']; ?>">
+                                <button type="submit">Maj</button>
+                            </form>
+                        <?php endif; ?>
                         <div class="cart-sous-total"><?php echo number_format($ligne['sous_total'], 2, ',', ' '); ?> €</div>
                         <form method="POST" action="cart_action.php">
                             <?php echo csrfField(); ?>
-                            <input type="hidden" name="action" value="remove">
-                            <input type="hidden" name="produit_id" value="<?php echo (int) $ligne['id']; ?>">
+                            <?php if (!empty($ligne['custom'])): ?>
+                                <input type="hidden" name="action" value="remove_custom">
+                                <input type="hidden" name="custom_id" value="<?php echo htmlspecialchars($ligne['id']); ?>">
+                            <?php else: ?>
+                                <input type="hidden" name="action" value="remove">
+                                <input type="hidden" name="produit_id" value="<?php echo (int) $ligne['id']; ?>">
+                            <?php endif; ?>
                             <input type="hidden" name="redirect" value="panier.php">
                             <button type="submit" class="cart-remove">Suppr.</button>
                         </form>

@@ -368,6 +368,18 @@ function initDatabase() {
             ['os', 'Microsoft', 'Windows 11 Famille (OEM)', '💽', 109, 'Licence OEM, préinstallation en boutique possible.', null, null, null, null, null, null, 999],
             ['os', 'Microsoft', 'Windows 11 Pro (OEM)', '💽', 149, 'Licence OEM Pro, chiffrement BitLocker et Bureau à distance.', null, null, null, null, null, null, 999],
             ['os', '—', 'Sans système d\'exploitation', '💽', 0, 'Vous installez vous-même votre OS (Linux, licence existante...).', null, null, null, null, null, null, 999],
+
+            // --- Périphériques (optionnels, sélection multiple) ---
+            ['peripherique', 'AOC', 'Écran 24" Full HD 75Hz', '🖵', 109, 'Dalle IPS, idéal bureautique et usage polyvalent.', null, null, null, null, null, null, 12],
+            ['peripherique', 'Samsung', 'Écran 27" 2K 144Hz', '🖵', 249, 'Dalle rapide 144Hz, confort gaming/2K.', null, null, null, null, null, null, 8],
+            ['peripherique', 'Logitech', 'Pack clavier + souris bureautique', '⌨️', 19, 'Pack filaire simple et fiable pour un usage quotidien.', null, null, null, null, null, null, 20],
+            ['peripherique', 'Corsair', 'Clavier mécanique gaming RGB', '⌨️', 59, 'Switchs mécaniques, rétroéclairage RGB personnalisable.', null, null, null, null, null, null, 10],
+            ['peripherique', 'Logitech', 'Souris gaming filaire', '🖱️', 29, 'Capteur optique précis, prise en main gaming.', null, null, null, null, null, null, 15],
+            ['peripherique', 'HyperX', 'Casque gaming avec micro', '🎧', 39, 'Confortable, micro amovible, compatible PC/consoles.', null, null, null, null, null, null, 12],
+            ['peripherique', 'Logitech', 'Webcam Full HD', '📷', 29, 'Visioconférence et streaming en 1080p.', null, null, null, null, null, null, 10],
+            ['peripherique', 'Logitech', 'Enceintes PC 2.0', '🔊', 24, 'Son d\'appoint pour la bureautique et le multimédia.', null, null, null, null, null, null, 10],
+            ['peripherique', '—', 'Tapis de souris XXL', '▭', 12, 'Surface large pour clavier et souris.', null, null, null, null, null, null, 20],
+            ['peripherique', '—', 'Hub USB-C', '🔌', 15, 'Ports supplémentaires USB-A / HDMI / lecteur de cartes.', null, null, null, null, null, null, 15],
         ];
         $ins = $pdo->prepare('INSERT INTO composants_pc (type, marque, nom, icone, prix, description, socket, ram_type, form_factor, wattage, power_draw, capacite, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         foreach ($composants as $c) {

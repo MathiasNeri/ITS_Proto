@@ -26,6 +26,7 @@ if (isset($_GET['session_id'])) {
         } else {
             $commande = confirmerPaiementCommande($pdo, $commandeId);
             $_SESSION['cart'] = [];
+            $_SESSION['cart_custom'] = [];
             unset($_SESSION['commande_en_attente']);
         }
     } catch (Exception $e) {
@@ -40,6 +41,7 @@ if (isset($_GET['session_id'])) {
     if (($_SESSION['commande_en_attente'] ?? null) == $commandeId) {
         $commande = confirmerPaiementCommande($pdo, $commandeId);
         $_SESSION['cart'] = [];
+        $_SESSION['cart_custom'] = [];
         unset($_SESSION['commande_en_attente']);
     } else {
         $error = 'Commande introuvable.';

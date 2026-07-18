@@ -9,10 +9,14 @@ $user_role = $_SESSION['user_role'] ?? '';
 // Déterminer la page active
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
 
-// Nombre d'articles dans le panier (session)
+// Nombre d'articles dans le panier (session), y compris les configurations
+// PC sur mesure ajoutées depuis le configurateur (une configuration = 1 article).
 $cart_count = 0;
 if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
     $cart_count = array_sum($_SESSION['cart']);
+}
+if (!empty($_SESSION['cart_custom']) && is_array($_SESSION['cart_custom'])) {
+    $cart_count += count($_SESSION['cart_custom']);
 }
 
 // Notification admin : rendez-vous / demandes de devis / messages en attente

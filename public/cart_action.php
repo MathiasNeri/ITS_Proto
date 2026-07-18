@@ -22,6 +22,13 @@ if (!csrfVerify()) {
     redirect($redirectTo);
 }
 
+if ($action === 'remove_custom' && isset($_POST['custom_id'])) {
+    if (isset($_SESSION['cart_custom'][$_POST['custom_id']])) {
+        unset($_SESSION['cart_custom'][$_POST['custom_id']]);
+    }
+    redirect($redirectTo);
+}
+
 if ($produitId > 0 && in_array($action, ['add', 'update'], true)) {
     $pdo = initDatabase();
     $stmt = $pdo->prepare('SELECT stock FROM produits WHERE id = ?');

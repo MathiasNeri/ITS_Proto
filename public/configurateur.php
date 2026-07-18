@@ -53,8 +53,9 @@ foreach (['gpu', 'refroidissement', 'os'] as $type) {
 
 $success = '';
 $error = '';
+$direction = $_POST['direction'] ?? '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($direction, ['devis', 'panier'], true)) {
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
     $adresse = trim($_POST['adresse'] ?? '');
@@ -73,6 +74,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    $peripheriques = [];
+    foreach ((array) ($_POST['comp_peripherique'] ?? []) as $pid) {
+        $pid = (int) $pid;
+        if (isset($parId[$pid]) && $parId[$pid]['type'] === 'peripherique') {
+            $peripheriques[] = $parId[$pid];
+        }
+    }
+
     $manquants = [];
     foreach ($requis as $type) {
         if (!isset($selection[$type])) {
@@ -82,13 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!csrfVerify()) {
         $error = 'Session expirée, merci de réessayer.';
-    } elseif (empty($nom) || empty($prenom) || empty($adresse) || empty($code_postal) || empty($ville) || empty($email) || empty($telephone)) {
-        $error = 'Tous les champs de contact obligatoires doivent être remplis.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Email invalide.';
     } elseif (!empty($manquants)) {
         $error = 'Merci de sélectionner : ' . implode(', ', $manquants) . '.';
-    } elseif (!$consentement) {
+    } elseif ($direction === 'devis' && (empty($nom) || empty($prenom) || empty($adresse) || empty($code_postal) || empty($ville) || empty($email) || empty($telephone))) {
+        $error = 'Tous les champs de contact obligatoires doivent être remplis.';
+    } elseif ($direction === 'devis' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Email invalide.';
+    } elseif ($direction === 'devis' && !$consentement) {
         $error = 'Merci d\'accepter l\'utilisation de vos données pour traiter votre demande.';
     } else {
         $total = 0;
@@ -105,33 +114,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $lignes[] = '- ' . $labels[$type] . ' : —';
             }
         }
+        if (!empty($peripheriques)) {
+            $lignes[] = '- Périphériques :';
+            foreach ($peripheriques as $p) {
+                $total += (float) $p['prix'];
+                $lignes[] = '  • ' . nomComplet($p) . ' (' . number_format($p['prix'], 2, ',', ' ') . ' €)';
+            }
+        } else {
+            $lignes[] = '- Périphériques : aucun';
+        }
         $recap = "Configuration PC sur mesure demandée en ligne :\n" . implode("\n", $lignes) .
-            "\n\nTotal composants (hors main d'oeuvre de montage) : " . number_format($total, 2, ',', ' ') . " €" .
+            "\n\nTotal (hors main d'oeuvre de montage) : " . number_format($total, 2, ',', ' ') . " €" .
             "\nConsommation électrique estimée : " . $totalPower . " W";
         if ($messageComplement !== '') {
             $recap .= "\n\nInfos complémentaires du client :\n" . $messageComplement;
         }
 
-        $stmt = $pdo->prepare('INSERT INTO devis (materiel, nom, prenom, adresse, code_postal, ville, email, telephone, boutique, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        if ($direction === 'panier') {
+            $sommaireParts = [];
+            if (isset($selection['cpu'])) {
+                $sommaireParts[] = nomComplet($selection['cpu']);
+            }
+            if (isset($selection['gpu']) && $selection['gpu']['marque'] !== '—') {
+                $sommaireParts[] = nomComplet($selection['gpu']);
+            }
+            $label = 'PC sur mesure : ' . implode(' + ', $sommaireParts);
+            if (strlen($label) > 250) {
+                $label = substr($label, 0, 247) . '...';
+            }
 
-        if ($stmt->execute(['Configuration PC sur mesure', $nom, $prenom, $adresse, $code_postal, $ville, $email, $telephone, 'Pierrefeu', $recap])) {
-            envoyerEmailsDevis([
-                'materiel' => 'Configuration PC sur mesure',
-                'nom' => $nom,
-                'prenom' => $prenom,
-                'email' => $email,
-                'telephone' => $telephone,
-                'message' => $recap,
-            ]);
-            $success = 'Votre configuration a bien été envoyée ! Nous revenons vers vous avec un devis détaillé et les délais de montage.';
-            $_POST = [];
+            if (!isset($_SESSION['cart_custom']) || !is_array($_SESSION['cart_custom'])) {
+                $_SESSION['cart_custom'] = [];
+            }
+            $customId = uniqid('cfg_', true);
+            $_SESSION['cart_custom'][$customId] = [
+                'nom' => $label,
+                'prix' => $total,
+                'icone' => '🖥️',
+                'details' => $recap,
+            ];
+            redirect('panier.php');
         } else {
-            $error = 'Erreur lors de l\'envoi de la demande.';
+            $stmt = $pdo->prepare('INSERT INTO devis (materiel, nom, prenom, adresse, code_postal, ville, email, telephone, boutique, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+
+            if ($stmt->execute(['Configuration PC sur mesure', $nom, $prenom, $adresse, $code_postal, $ville, $email, $telephone, 'Pierrefeu', $recap])) {
+                envoyerEmailsDevis([
+                    'materiel' => 'Configuration PC sur mesure',
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'email' => $email,
+                    'telephone' => $telephone,
+                    'message' => $recap,
+                ]);
+                $success = 'Votre configuration a bien été envoyée ! Nous revenons vers vous avec un devis détaillé et les délais de montage.';
+                $_POST = [];
+            } else {
+                $error = 'Erreur lors de l\'envoi de la demande.';
+            }
         }
     }
 }
 
 $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
+$checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_POST['comp_peripherique'] ?? [])) : [];
 ?>
 <?php include 'header.php'; ?>
 
@@ -155,6 +200,37 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
         max-width: 700px;
         margin: 0 auto 2rem;
         line-height: 1.6;
+    }
+
+    .presets-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: .8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .presets-label {
+        color: var(--text-muted);
+        font-size: .85rem;
+        font-weight: bold;
+    }
+
+    .preset-btn {
+        background: var(--surface-alt);
+        color: var(--text);
+        border: 2px solid transparent;
+        border-radius: 20px;
+        padding: .55rem 1.3rem;
+        font-size: .88rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: border-color .15s ease;
+    }
+
+    .preset-btn:hover {
+        border-color: var(--accent-2);
     }
 
     .message {
@@ -234,7 +310,8 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
         display: none;
     }
 
-    .option-card input[type="radio"] {
+    .option-card input[type="radio"],
+    .option-card input[type="checkbox"] {
         position: absolute;
         top: .8rem;
         right: .8rem;
@@ -428,6 +505,50 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
         color: var(--text);
     }
 
+    .btn-add-cart {
+        width: 100%;
+        background: var(--accent-2);
+        color: #fff;
+        padding: .9rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .btn-add-cart:hover {
+        background: var(--accent-2-hover);
+    }
+
+    .cart-hint {
+        font-size: .72rem;
+        color: var(--text-muted);
+        text-align: center;
+        margin: .5rem 0 1rem;
+        line-height: 1.4;
+    }
+
+    .config-contact-divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: .78rem;
+        margin: 1rem 0;
+    }
+
+    .config-contact-divider::before,
+    .config-contact-divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--surface-alt);
+    }
+
+    .config-contact-divider span {
+        padding: 0 .8rem;
+    }
+
     @media (max-width: 900px) {
         .configurateur-layout {
             grid-template-columns: 1fr;
@@ -466,8 +587,8 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
         <h1 class="page-title">🖥️ CONFIGURATEUR PC SUR MESURE</h1>
         <p class="page-subtitle">
             Assemblez votre PC composant par composant : le configurateur ne vous montre que les pièces compatibles
-            entre elles (socket, mémoire, format de boîtier). Une fois votre configuration prête, envoyez-la nous :
-            nous vous recontactons avec un devis détaillé et les délais de montage en boutique.
+            entre elles (socket, mémoire, format de boîtier). Une fois prête, ajoutez votre configuration au panier
+            pour l'acheter directement, ou demandez un devis pour être recontacté par notre équipe.
         </p>
 
         <?php if ($success): ?>
@@ -476,6 +597,12 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
         <?php if ($error): ?>
             <div class="message error"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
+
+        <div class="presets-bar">
+            <span class="presets-label">Profils rapides :</span>
+            <button type="button" class="preset-btn" id="presetGaming">🎮 Gaming</button>
+            <button type="button" class="preset-btn" id="presetBureautique">💼 Bureautique</button>
+        </div>
 
         <form method="POST" id="configForm">
             <?php echo csrfField(); ?>
@@ -530,6 +657,28 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
                             </div>
                         </div>
                     <?php endforeach; ?>
+
+                    <div class="config-section">
+                        <h2 class="config-section-title">
+                            🖱️ Périphériques
+                            <span class="config-section-hint">(optionnel, plusieurs choix possibles)</span>
+                        </h2>
+                        <div class="options-grid" data-type="peripherique">
+                            <?php foreach ($parType['peripherique'] ?? [] as $c):
+                                $id = (int) $c['id'];
+                                $checked = in_array($id, $checkedPeripheriqueIds, true);
+                            ?>
+                                <label class="option-card<?php echo $checked ? ' selected' : ''; ?>"
+                                       data-id="<?php echo $id; ?>" data-type="peripherique">
+                                    <input type="checkbox" class="peripherique-check" name="comp_peripherique[]" value="<?php echo $id; ?>" <?php echo $checked ? 'checked' : ''; ?>>
+                                    <span class="option-icon"><?php echo $c['icone']; ?></span>
+                                    <span class="option-name"><?php echo htmlspecialchars(nomComplet($c)); ?></span>
+                                    <span class="option-desc"><?php echo htmlspecialchars($c['description']); ?></span>
+                                    <span class="option-price"><?php echo number_format($c['prix'], 2, ',', ' '); ?> €</span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="config-summary">
@@ -540,13 +689,22 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
                             <span class="summary-value">—</span>
                         </div>
                     <?php endforeach; ?>
+                    <div class="summary-row" data-type="peripherique">
+                        <span class="summary-label">Périphériques</span>
+                        <span class="summary-value" id="summaryPeripheriques">Aucun</span>
+                    </div>
                     <div class="summary-total">
-                        <span>Total</span>
+                        <span>Prix final</span>
                         <span id="summaryTotal">0,00 €</span>
                     </div>
                     <p class="power-note" id="powerNote"></p>
 
                     <button type="button" class="btn-reset-config" id="resetConfig">Réinitialiser la configuration</button>
+
+                    <button type="submit" name="direction" value="panier" class="btn-add-cart" id="addToCartBtn">🛒 Ajouter au panier</button>
+                    <p class="cart-hint">Achat direct : votre configuration part au panier, vous réglez en ligne comme un produit classique.</p>
+
+                    <div class="config-contact-divider"><span>ou</span></div>
 
                     <div class="config-contact">
                         <div class="form-group">
@@ -589,7 +747,7 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
                             <label for="consentement">J'accepte que mes données soient utilisées pour traiter ma demande de devis. *</label>
                         </div>
 
-                        <button type="submit" class="btn-submit-config">Demander un devis pour cette configuration</button>
+                        <button type="submit" name="direction" value="devis" class="btn-submit-config">Demander un devis pour cette configuration</button>
                     </div>
                 </div>
             </div>
@@ -621,6 +779,11 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
         function getSelected(type) {
             var input = document.querySelector('input[name="comp_' + type + '"]:checked');
             return input ? byId[input.value] : null;
+        }
+
+        function getSelectedPeripheriques() {
+            var inputs = document.querySelectorAll('input.peripherique-check:checked');
+            return Array.prototype.map.call(inputs, function (input) { return byId[input.value]; }).filter(Boolean);
         }
 
         function setCompatibility(type, isCompatible) {
@@ -675,6 +838,16 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
                 }
             });
 
+            var peripheriques = getSelectedPeripheriques();
+            var peripheriquesTotal = peripheriques.reduce(function (sum, p) { return sum + p.prix; }, 0);
+            total += peripheriquesTotal;
+            var periphRow = document.getElementById('summaryPeripheriques');
+            if (peripheriques.length) {
+                periphRow.textContent = peripheriques.length + ' sélectionné' + (peripheriques.length > 1 ? 's' : '') + ' — ' + peripheriquesTotal.toFixed(2).replace('.', ',') + ' €';
+            } else {
+                periphRow.textContent = 'Aucun';
+            }
+
             document.getElementById('summaryTotal').textContent = total.toFixed(2).replace('.', ',') + ' €';
 
             var alim = getSelected('alimentation');
@@ -705,14 +878,88 @@ $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
             });
         }
 
-        document.querySelectorAll('.option-card input[type="radio"]').forEach(function (input) {
+        document.querySelectorAll('.option-card input[type="radio"], .option-card input[type="checkbox"]').forEach(function (input) {
             input.addEventListener('change', refresh);
         });
 
         var resetBtn = document.getElementById('resetConfig');
         if (resetBtn) {
             resetBtn.addEventListener('click', function () {
-                document.querySelectorAll('.option-card input[type="radio"]').forEach(function (i) { i.checked = false; });
+                document.querySelectorAll('.option-card input[type="radio"], .option-card input[type="checkbox"]').forEach(function (i) { i.checked = false; });
+                refresh();
+            });
+        }
+
+        // Le bouton "Ajouter au panier" n'a pas besoin des coordonnées du
+        // client (elles seront demandées au moment du paiement) : on
+        // désactive la validation HTML5 de ces champs avant que le clic ne
+        // déclenche la soumission (le contrôle de validité a lieu avant
+        // l'évènement "submit", donc trop tard pour agir dedans).
+        var form = document.getElementById('configForm');
+        var addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', function () {
+                form.querySelectorAll('.config-contact [required]').forEach(function (el) {
+                    el.required = false;
+                });
+            });
+        }
+
+        function selectByName(type, nom) {
+            var comp = catalog.find(function (c) { return c.type === type && c.nom === nom; });
+            if (!comp) return;
+            var input = document.querySelector('.option-card[data-type="' + type + '"][data-id="' + comp.id + '"] input');
+            if (input) input.checked = true;
+        }
+
+        function selectPeripheriques(noms) {
+            document.querySelectorAll('input.peripherique-check').forEach(function (i) { i.checked = false; });
+            noms.forEach(function (nom) {
+                var comp = catalog.find(function (c) { return c.type === 'peripherique' && c.nom === nom; });
+                if (!comp) return;
+                var input = document.querySelector('.option-card[data-type="peripherique"][data-id="' + comp.id + '"] input');
+                if (input) input.checked = true;
+            });
+        }
+
+        var presetGaming = document.getElementById('presetGaming');
+        if (presetGaming) {
+            presetGaming.addEventListener('click', function () {
+                selectByName('cpu', 'AMD Ryzen 5 7600X');
+                selectByName('carte_mere', 'ASUS TUF Gaming B650-PLUS');
+                selectByName('ram', 'Corsair Vengeance 32 Go (2x16) 6000MHz');
+                selectByName('gpu', 'NVIDIA GeForce RTX 4070 Super');
+                selectByName('stockage', 'Samsung SSD NVMe 990 Pro 1 To');
+                selectByName('alimentation', 'Corsair RM750 750W 80+ Gold');
+                selectByName('boitier', 'NZXT H5 Flow ATX Gaming');
+                selectByName('refroidissement', 'Corsair iCUE 240mm AIO');
+                selectByName('os', 'Microsoft Windows 11 Famille (OEM)');
+                selectPeripheriques([
+                    'Samsung Écran 27" 2K 144Hz',
+                    'Corsair Clavier mécanique gaming RGB',
+                    'Logitech Souris gaming filaire',
+                    'HyperX Casque gaming avec micro'
+                ]);
+                refresh();
+            });
+        }
+
+        var presetBureautique = document.getElementById('presetBureautique');
+        if (presetBureautique) {
+            presetBureautique.addEventListener('click', function () {
+                selectByName('cpu', 'AMD Ryzen 5 5600');
+                selectByName('carte_mere', 'ASRock B450M Pro4');
+                selectByName('ram', 'Corsair Vengeance LPX 16 Go (2x8) 3200MHz');
+                selectByName('gpu', 'Sans carte graphique dédiée (iGPU)');
+                selectByName('stockage', 'Samsung SSD NVMe 980 500 Go');
+                selectByName('alimentation', 'Corsair CV550 550W 80+ Bronze');
+                selectByName('boitier', 'Fractal Design Meshify Compact mATX');
+                selectByName('refroidissement', 'Ventirad d\'origine');
+                selectByName('os', 'Microsoft Windows 11 Famille (OEM)');
+                selectPeripheriques([
+                    'AOC Écran 24" Full HD 75Hz',
+                    'Logitech Pack clavier + souris bureautique'
+                ]);
                 refresh();
             });
         }

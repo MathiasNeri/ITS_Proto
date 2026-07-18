@@ -13,35 +13,48 @@ if (!$is_logged_in) {
 
 $pdo = initDatabase();
 $cart = (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) ? $_SESSION['cart'] : [];
+$cartCustom = (!empty($_SESSION['cart_custom']) && is_array($_SESSION['cart_custom'])) ? $_SESSION['cart_custom'] : [];
 
 $error = '';
 $promoMessage = '';
 
-function chargerLignesPanier(PDO $pdo, array $cart) {
-    if (empty($cart)) {
-        return [];
-    }
-    $ids = array_map('intval', array_keys($cart));
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $stmt = $pdo->prepare("SELECT * FROM produits WHERE id IN ($placeholders)");
-    $stmt->execute($ids);
-    $produitsById = [];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $p) {
-        $produitsById[$p['id']] = $p;
+function chargerLignesPanier(PDO $pdo, array $cart, array $cartCustom) {
+    $lignes = [];
+
+    if (!empty($cart)) {
+        $ids = array_map('intval', array_keys($cart));
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare("SELECT * FROM produits WHERE id IN ($placeholders)");
+        $stmt->execute($ids);
+        $produitsById = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $p) {
+            $produitsById[$p['id']] = $p;
+        }
+
+        foreach ($cart as $id => $qty) {
+            if (!isset($produitsById[$id])) {
+                continue;
+            }
+            $p = $produitsById[$id];
+            $lignes[] = ['produit' => $p, 'qty' => (int) $qty, 'sous_total' => $p['prix'] * $qty];
+        }
     }
 
-    $lignes = [];
-    foreach ($cart as $id => $qty) {
-        if (!isset($produitsById[$id])) {
-            continue;
-        }
-        $p = $produitsById[$id];
-        $lignes[] = ['produit' => $p, 'qty' => (int) $qty, 'sous_total' => $p['prix'] * $qty];
+    // Configurations PC sur mesure ajoutées depuis configurateur.php : pas
+    // de produit_id (produit_id NULL est déjà supporté par commande_lignes).
+    foreach ($cartCustom as $entry) {
+        $prix = (float) $entry['prix'];
+        $lignes[] = [
+            'produit' => ['id' => null, 'nom' => $entry['nom'], 'prix' => $prix, 'stock' => 999],
+            'qty' => 1,
+            'sous_total' => $prix,
+        ];
     }
+
     return $lignes;
 }
 
-$lignes = chargerLignesPanier($pdo, $cart);
+$lignes = chargerLignesPanier($pdo, $cart, $cartCustom);
 $sousTotal = array_sum(array_column($lignes, 'sous_total'));
 $modeLivraison = $_SESSION['mode_livraison'] ?? 'boutique';
 
