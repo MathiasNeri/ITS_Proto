@@ -54,10 +54,11 @@ $tagLabels = [
         gap: 1rem;
         flex-wrap: wrap;
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 1rem 1.25rem;
         margin-bottom: 2rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .chip-row {
@@ -75,6 +76,7 @@ $tagLabels = [
         padding: .5rem .9rem;
         border-radius: 20px;
         cursor: pointer;
+        transition: background-color var(--ease), border-color var(--ease), color var(--ease);
     }
 
     .chip.active {
@@ -114,23 +116,25 @@ $tagLabels = [
 
     .shop-card {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        transition: transform .2s ease, border-color .2s ease;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease);
     }
 
     .shop-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: var(--accent);
+        box-shadow: var(--shadow-md);
     }
 
     .shop-media {
         position: relative;
         height: 140px;
-        background: var(--surface-alt);
+        background: linear-gradient(135deg, var(--surface-alt) 0%, var(--surface-deep) 100%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -208,16 +212,19 @@ $tagLabels = [
         background: var(--accent);
         color: #fff;
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         padding: .6rem;
         font-weight: bold;
         font-size: .8rem;
         cursor: pointer;
         width: 100%;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
 
     .shop-add-btn:hover {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
     }
 
     .shop-empty {

@@ -98,16 +98,18 @@ if ($produit) {
         grid-template-columns: 1fr 1fr;
         gap: 2.5rem;
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-lg);
         padding: 2rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .product-media {
         position: relative;
-        height: 320px;
-        border-radius: 10px;
-        background: var(--surface-alt);
+        height: 100%;
+        min-height: 320px;
+        border-radius: var(--radius-md);
+        background: linear-gradient(135deg, var(--surface-alt) 0%, var(--surface-deep) 100%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -200,7 +202,7 @@ if ($produit) {
         display: flex;
         align-items: center;
         border: 1px solid var(--surface-alt);
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         overflow: hidden;
     }
 
@@ -219,15 +221,18 @@ if ($produit) {
         background: var(--accent);
         color: #fff;
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         padding: .9rem;
         font-weight: bold;
         font-size: .95rem;
         cursor: pointer;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
 
-    .product-add-btn:hover {
+    .product-add-btn:hover:not(:disabled) {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
 
     .product-add-btn:disabled {
@@ -254,10 +259,11 @@ if ($produit) {
 
     .avis-card {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 10px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 1.2rem 1.4rem;
         margin-bottom: 1rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .avis-card .avis-head {
@@ -297,9 +303,10 @@ if ($produit) {
 
     .avis-form {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 10px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 1.5rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .avis-form label {
@@ -315,11 +322,18 @@ if ($produit) {
         width: 100%;
         padding: .7rem;
         border: 2px solid var(--surface-alt);
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         background: var(--surface-alt);
         color: var(--text);
         font-size: .9rem;
         margin-bottom: 1rem;
+        transition: border-color var(--ease);
+    }
+
+    .avis-form select:focus,
+    .avis-form textarea:focus {
+        outline: none;
+        border-color: var(--accent-2);
     }
 
     .avis-form textarea {
@@ -331,14 +345,17 @@ if ($produit) {
         background: var(--accent);
         color: #fff;
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         padding: .8rem 1.6rem;
         font-weight: bold;
         cursor: pointer;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
 
     .avis-form button:hover {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
     }
 
     .avis-message {

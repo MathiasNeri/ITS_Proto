@@ -56,92 +56,116 @@ if ($_POST) {
 <style>
     .login-page {
         background: var(--bg);
-        min-height: 100vh;
+        min-height: calc(100vh - 108px);
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 2rem;
     }
-    
+
+    @media (max-width: 640px) {
+        .login-page {
+            min-height: calc(100vh - 96px);
+        }
+    }
+
     .login-container {
         background: var(--surface);
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2.2rem;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
         width: 100%;
         max-width: 400px;
     }
-    
+
     .login-title {
         text-align: center;
         margin-bottom: 2rem;
         color: var(--accent);
         font-size: 1.5rem;
     }
-    
+
     .form-group {
         margin-bottom: 1rem;
     }
-    
+
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
         color: var(--text-muted);
         font-weight: bold;
     }
-    
+
     .form-group input {
         width: 100%;
         padding: 0.8rem;
-        border: 1px solid var(--surface-alt);
-        border-radius: 5px;
+        border: 2px solid var(--surface-alt);
+        border-radius: var(--radius-sm);
         background: var(--surface-alt);
         color: var(--text);
         font-size: 1rem;
+        transition: border-color var(--ease);
     }
-    
+
     .form-group input:focus {
         outline: none;
         border-color: var(--accent);
     }
-    
+
     .btn-login {
         width: 100%;
-        padding: 0.8rem;
+        padding: 0.85rem;
         background: var(--accent);
         color: var(--text);
         border: none;
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
-    
+
     .btn-login:hover {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
-    
+
     .error {
         background: var(--accent);
         color: var(--text);
         padding: 1rem;
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         margin-bottom: 1rem;
         text-align: center;
     }
-    
+
     .register-link {
         text-align: center;
-        margin-top: 1rem;
+        margin-top: 1.4rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid var(--divider);
     }
-    
+
+    .register-link p {
+        margin-bottom: .5rem;
+        color: var(--text-muted);
+        font-size: .9rem;
+    }
+
+    .register-link p:last-child {
+        margin-bottom: 0;
+    }
+
     .register-link a {
-        color: var(--accent);
+        color: var(--accent-2);
+        font-weight: bold;
         text-decoration: none;
     }
-    
+
     .register-link a:hover {
+        color: var(--accent-2-hover);
         text-decoration: underline;
     }
 </style>

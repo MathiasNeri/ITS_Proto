@@ -79,10 +79,11 @@ foreach ($cartCustom as $customId => $entry) {
 
     .cart-card {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 1.5rem;
         margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .cart-row {
@@ -90,7 +91,8 @@ foreach ($cartCustom as $customId => $entry) {
         align-items: center;
         gap: 1rem;
         padding: 1rem 0;
-        border-bottom: 1px solid var(--surface-alt);
+        border-bottom: 1px solid var(--divider);
+        transition: background-color var(--ease);
     }
 
     .cart-row:last-child {
@@ -100,8 +102,8 @@ foreach ($cartCustom as $customId => $entry) {
     .cart-thumb {
         width: 56px;
         height: 56px;
-        border-radius: 8px;
-        background: var(--surface-alt);
+        border-radius: var(--radius-sm);
+        background: linear-gradient(135deg, var(--surface-alt) 0%, var(--surface-deep) 100%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -144,11 +146,12 @@ foreach ($cartCustom as $customId => $entry) {
         background: var(--accent-2);
         color: #fff;
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         padding: .5rem .8rem;
         font-size: .75rem;
         font-weight: bold;
         cursor: pointer;
+        transition: background-color var(--ease);
     }
 
     .qty-form button:hover {
@@ -173,8 +176,35 @@ foreach ($cartCustom as $customId => $entry) {
 
     .cart-empty {
         text-align: center;
-        padding: 3rem 0;
+        padding: 3.5rem 1rem;
         color: var(--text-muted);
+    }
+
+    .cart-empty-icon {
+        width: 84px;
+        height: 84px;
+        margin: 0 auto 1.2rem;
+        border-radius: 50%;
+        background: var(--surface-alt);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 38px;
+    }
+
+    .cart-empty p {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .cart-empty a {
+        color: var(--accent-2);
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .cart-empty a:hover {
+        text-decoration: underline;
     }
 
     .cart-config-details {
@@ -211,16 +241,19 @@ foreach ($cartCustom as $customId => $entry) {
         background: var(--accent);
         color: #fff;
         border: none;
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         padding: 1rem;
         font-size: 1.05rem;
         font-weight: bold;
         text-decoration: none;
         cursor: pointer;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
 
     .checkout-btn:hover {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
 
     .checkout-btn.disabled {
@@ -287,7 +320,10 @@ foreach ($cartCustom as $customId => $entry) {
 
         <div class="cart-card">
             <?php if (empty($lignes)): ?>
-                <div class="cart-empty">Votre panier est vide.<br>Direction la <a href="boutique.php" style="color: var(--accent-2);">boutique</a> !</div>
+                <div class="cart-empty">
+                    <div class="cart-empty-icon">🛒</div>
+                    <p>Votre panier est vide.<br>Direction la <a href="boutique.php">boutique</a> !</p>
+                </div>
             <?php else: ?>
                 <?php foreach ($lignes as $ligne): ?>
                     <div class="cart-row">

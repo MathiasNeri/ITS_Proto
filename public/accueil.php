@@ -14,7 +14,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     /* Hero Section */
     .hero {
         height: 60vh;
-        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+        background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.5) 55%, rgba(0,0,0,.82) 100%),
                     url('images/hero-bg.jpg');
         background-size: cover;
         background-position: center;
@@ -52,6 +52,50 @@ $user_role = $_SESSION['user_role'] ?? '';
         text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
     }
 
+    .hero-cta {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-cta a {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .9rem 1.8rem;
+        border-radius: var(--radius-sm);
+        font-weight: bold;
+        font-size: .95rem;
+        text-decoration: none;
+        transition: transform var(--ease), box-shadow var(--ease), background-color var(--ease);
+    }
+
+    .hero-cta .cta-primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(231, 76, 60, .4);
+    }
+
+    .hero-cta .cta-primary:hover {
+        background: var(--accent-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(231, 76, 60, .5);
+    }
+
+    .hero-cta .cta-secondary {
+        background: rgba(255, 255, 255, .1);
+        color: #fff;
+        border: 1.5px solid rgba(255, 255, 255, .55);
+        backdrop-filter: blur(4px);
+    }
+
+    .hero-cta .cta-secondary:hover {
+        background: rgba(255, 255, 255, .18);
+        transform: translateY(-2px);
+        border-color: #fff;
+    }
+
     .typing-line {
         display: inline-block;
     }
@@ -81,12 +125,20 @@ $user_role = $_SESSION['user_role'] ?? '';
     
     .main-title {
         text-align: center;
-        font-size: 2rem;
+        font-size: 1.3rem;
         font-weight: bold;
         margin-bottom: 3rem;
-        color: var(--text);
+        color: var(--text-muted);
+        letter-spacing: .3px;
     }
-    
+
+    .main-title .typing-line {
+        font-size: 2.4rem;
+        color: var(--accent);
+        margin-bottom: .6rem;
+    }
+
+
     .services-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -96,16 +148,18 @@ $user_role = $_SESSION['user_role'] ?? '';
     
     .service-card {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 2rem 1.5rem;
         text-align: center;
-        transition: transform 0.3s, border-color 0.3s;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease);
     }
-    
+
     .service-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: var(--accent);
+        box-shadow: var(--shadow-md);
     }
     
     .service-icon {
@@ -132,15 +186,18 @@ $user_role = $_SESSION['user_role'] ?? '';
     }
     
     .os-card {
-        background: transparent;
-        border: none;
-        padding: 1rem;
+        background: var(--surface);
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
+        padding: 1.2rem 1rem;
         text-align: center;
-        transition: transform 0.3s;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), box-shadow var(--ease);
     }
-    
+
     .os-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
     }
     
     .os-icon {
@@ -179,24 +236,25 @@ $user_role = $_SESSION['user_role'] ?? '';
         color: var(--text);
         padding: 1rem 2rem;
         border: 2px solid var(--accent-2);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
         text-decoration: none;
         display: inline-block;
     }
-    
+
     .action-btn:hover {
         background: var(--accent-2);
         transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
     }
-    
+
     .action-btn.primary {
         border-color: var(--accent);
     }
-    
+
     .action-btn.primary:hover {
         background: var(--accent);
     }
@@ -251,7 +309,11 @@ $user_role = $_SESSION['user_role'] ?? '';
         }
 
         .main-title {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .main-title .typing-line {
+            font-size: 1.9rem;
         }
 
         .hero {
@@ -279,7 +341,11 @@ $user_role = $_SESSION['user_role'] ?? '';
         }
 
         .main-title {
-            font-size: 1.25rem;
+            font-size: .95rem;
+        }
+
+        .main-title .typing-line {
+            font-size: 1.5rem;
         }
     }
 </style>
@@ -294,6 +360,10 @@ $user_role = $_SESSION['user_role'] ?? '';
         <?php endif; ?>
         <div class="hero-text">
             Nous réparons vos ordinateurs, téléphones, tablettes, écrans.
+        </div>
+        <div class="hero-cta">
+            <a href="boutique.php" class="cta-primary">🛍️ Voir la boutique</a>
+            <a href="rdv.php" class="cta-secondary">📅 Prendre rendez-vous</a>
         </div>
     </div>
 </section>
@@ -340,7 +410,7 @@ $user_role = $_SESSION['user_role'] ?? '';
     </section>
 
     <!-- Configurateur PC -->
-    <section id="configurateur-teaser" style="background: var(--surface); border: 2px solid var(--surface-alt); border-radius: 12px; padding: 2.5rem 2rem; text-align: center; margin-bottom: 3rem;">
+    <section id="configurateur-teaser" style="background: linear-gradient(135deg, var(--surface) 0%, var(--surface-alt) 100%); border: 1px solid var(--divider); border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center; margin-bottom: 4rem; box-shadow: var(--shadow-md);">
         <h2 style="color: var(--accent); margin-bottom: .8rem; font-size: 1.6rem;">🖥️ Configurateur PC sur mesure</h2>
         <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto 1.5rem; line-height: 1.6;">
             Assemblez votre PC composant par composant : le configurateur vérifie automatiquement la compatibilité

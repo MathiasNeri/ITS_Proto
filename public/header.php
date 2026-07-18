@@ -41,7 +41,9 @@ if ($is_logged_in && $user_role === 'admin') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $config['site_name']; ?> - <?php echo $config['site_title']; ?></title>
     <link rel="icon" type="image/png" href="images/logo-its.png">
-    <link href="https://fonts.googleapis.com/css2?family=Autour+One&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Autour+One&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         // Applique le thème mémorisé avant le premier rendu (évite le flash)
         (function () {
@@ -71,6 +73,20 @@ if ($is_logged_in && $user_role === 'admin') {
             --accent-2-hover: #2980b9;
             --success: #27ae60;
             --divider: #333333;
+
+            /* Typographie : Autour One réservé aux grands titres (h1),
+               Inter pour tout le reste — plus lisible en paragraphe/UI. */
+            --font-display: 'Autour One', 'Inter', sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+            /* Profondeur et rayons partagés par toutes les cartes/boutons du site. */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .3), 0 1px 2px rgba(0, 0, 0, .22);
+            --shadow-md: 0 8px 20px rgba(0, 0, 0, .28);
+            --shadow-lg: 0 20px 45px rgba(0, 0, 0, .35);
+            --ease: .2s cubic-bezier(.4, 0, .2, 1);
         }
 
         :root[data-theme="light"] {
@@ -81,17 +97,47 @@ if ($is_logged_in && $user_role === 'admin') {
             --text: #1c2226;
             --text-muted: #55606a;
             --divider: #dfe4e6;
+
+            --shadow-sm: 0 1px 3px rgba(28, 34, 38, .08), 0 1px 2px rgba(28, 34, 38, .06);
+            --shadow-md: 0 8px 20px rgba(28, 34, 38, .1);
+            --shadow-lg: 0 20px 45px rgba(28, 34, 38, .14);
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
-            font-family: 'Autour One', display;
+            font-family: var(--font-body);
             background-color: var(--bg);
             color: var(--text);
             line-height: 1.6;
             min-height: 100vh;
             padding-top: 108px;
-            scroll-behavior: smooth;
             transition: background-color .2s ease, color .2s ease;
+        }
+
+        h1 {
+            font-family: var(--font-display);
+        }
+
+        h1, h2, h3 {
+            line-height: 1.25;
+        }
+
+        a {
+            font-family: inherit;
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent-2);
+            outline-offset: 2px;
+            border-radius: 4px;
         }
 
         /* Header */
@@ -103,6 +149,7 @@ if ($is_logged_in && $user_role === 'admin') {
             width: 100%;
             z-index: 1000;
             border-bottom: 1px solid var(--divider);
+            box-shadow: var(--shadow-sm);
             transition: background-color .2s ease, border-color .2s ease;
         }
 
@@ -149,8 +196,11 @@ if ($is_logged_in && $user_role === 'admin') {
             font-size: .88rem;
             font-weight: bold;
             letter-spacing: .2px;
-            transition: color 0.3s;
             white-space: nowrap;
+            padding: .4rem .5rem;
+            margin: -.4rem -.5rem;
+            border-radius: var(--radius-sm);
+            transition: color var(--ease), background-color var(--ease);
         }
 
         .nav-item svg {
@@ -169,10 +219,12 @@ if ($is_logged_in && $user_role === 'admin') {
 
         .nav-item:hover {
             color: var(--accent);
+            background-color: var(--surface-alt);
         }
 
         .nav-item.active {
             color: var(--accent-2);
+            background-color: var(--surface-alt);
         }
 
         .user-menu {
@@ -207,6 +259,7 @@ if ($is_logged_in && $user_role === 'admin') {
         .icon-btn:hover {
             border-color: var(--accent);
             transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
         }
 
         .icon-btn svg {
@@ -259,7 +312,7 @@ if ($is_logged_in && $user_role === 'admin') {
             font-weight: bold;
             letter-spacing: .3px;
             white-space: nowrap;
-            transition: color 0.3s;
+            transition: color var(--ease);
         }
 
         .user-link:hover {
@@ -324,6 +377,7 @@ if ($is_logged_in && $user_role === 'admin') {
             color: var(--accent-2);
             text-decoration: none;
             margin: 0 0.5rem;
+            transition: color var(--ease);
         }
 
         .footer-links a:hover {
@@ -344,6 +398,16 @@ if ($is_logged_in && $user_role === 'admin') {
         .social-icons {
             display: flex;
             gap: 0.5rem;
+        }
+
+        .social-icons svg {
+            border-radius: 50%;
+            transition: transform var(--ease), box-shadow var(--ease);
+        }
+
+        .social-icons svg:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
 
         .location-name {
@@ -399,6 +463,8 @@ if ($is_logged_in && $user_role === 'admin') {
             .nav-item {
                 font-size: 1rem;
                 width: 100%;
+                margin: 0;
+                padding: .6rem .5rem;
             }
 
             body {

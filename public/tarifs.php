@@ -32,21 +32,29 @@ $user_role = $_SESSION['user_role'] ?? '';
     
     .pricing-card {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 2rem;
         text-align: center;
-        transition: transform 0.3s, border-color 0.3s;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease);
     }
-    
+
     .pricing-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: var(--accent);
+        box-shadow: var(--shadow-md);
     }
-    
+
     .pricing-card.featured {
         border-color: var(--accent);
         transform: scale(1.05);
+        box-shadow: var(--shadow-md);
+    }
+
+    .pricing-card.featured:hover {
+        transform: scale(1.05) translateY(-4px);
+        box-shadow: var(--shadow-lg);
     }
     
     .service-name {
@@ -90,25 +98,28 @@ $user_role = $_SESSION['user_role'] ?? '';
         color: var(--text);
         padding: 1rem 2rem;
         border: none;
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         font-size: 1.1rem;
         font-weight: bold;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
         text-decoration: none;
         display: inline-block;
     }
-    
+
     .cta-btn:hover {
         background: var(--accent-hover);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
     }
-    
+
     .info-section {
         background: var(--surface-alt);
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         padding: 2rem;
         margin-top: 3rem;
         text-align: center;
+        box-shadow: var(--shadow-sm);
     }
     
     .info-title {

@@ -60,16 +60,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     .contact-info {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-lg);
         padding: 2rem;
+        box-shadow: var(--shadow-sm);
     }
-    
+
     .contact-form {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-lg);
         padding: 2rem;
+        box-shadow: var(--shadow-sm);
     }
     
     .info-title {
@@ -95,6 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         justify-content: center;
         margin-right: 1rem;
         font-size: 1.2rem;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-sm);
     }
     
     .info-text {
@@ -123,38 +127,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         width: 100%;
         padding: 0.8rem;
         border: 2px solid var(--surface-alt);
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         background: var(--surface-deep);
         color: var(--text);
         font-size: 1rem;
+        transition: border-color var(--ease);
     }
-    
+
     .form-group input:focus,
     .form-group textarea:focus {
         outline: none;
         border-color: var(--accent);
     }
-    
+
     .form-group textarea {
         height: 120px;
         resize: vertical;
     }
-    
+
     .btn-submit {
         background: var(--accent);
         color: var(--text);
         padding: 1rem 2rem;
         border: none;
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         font-size: 1.1rem;
         font-weight: bold;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
         width: 100%;
     }
-    
+
     .btn-submit:hover {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
     
     .locations-section {
@@ -173,9 +180,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     .location-card {
         background: var(--surface-alt);
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         padding: 2rem;
         text-align: center;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), box-shadow var(--ease);
+    }
+
+    .location-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
     }
     
     .location-name {

@@ -82,16 +82,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     
     .os-card {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 2rem;
         text-align: center;
-        transition: transform 0.3s, border-color 0.3s;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease);
     }
-    
+
     .os-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: var(--accent);
+        box-shadow: var(--shadow-md);
     }
     
     .os-icon {
@@ -128,9 +130,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     
     .service-card {
         background: var(--surface-alt);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         padding: 1.5rem;
         text-align: center;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), box-shadow var(--ease);
+    }
+
+    .service-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
     }
     
     .service-title {
@@ -154,17 +163,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         color: var(--text);
         padding: 1rem 2rem;
         border: none;
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         font-size: 1.1rem;
         font-weight: bold;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
         text-decoration: none;
         display: inline-block;
     }
-    
+
     .cta-btn:hover {
         background: var(--accent-hover);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
     }
 
     .devis-section {
@@ -186,20 +197,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
 
     .brand-badge {
         background: var(--surface-alt);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         padding: 0.9rem 0.5rem;
         text-align: center;
         color: var(--text-muted);
         font-weight: 700;
         letter-spacing: 0.5px;
         font-size: 0.95rem;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), box-shadow var(--ease);
+    }
+
+    .brand-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: var(--text);
     }
 
     .devis-form-card {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-lg);
         padding: 2rem;
+        box-shadow: var(--shadow-md);
     }
 
     .devis-form .form-row {
@@ -226,10 +246,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         width: 100%;
         padding: 0.8rem;
         border: 2px solid var(--surface-alt);
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         background: var(--surface-deep);
         color: var(--text);
         font-size: 1rem;
+        transition: border-color var(--ease);
     }
 
     .devis-form .form-group input:focus,
@@ -260,10 +281,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         background: var(--surface-alt);
         color: var(--text);
         padding: 0.7rem 1.2rem;
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         cursor: pointer;
         font-weight: bold;
-        transition: background 0.3s;
+        transition: background-color var(--ease);
     }
 
     .file-label:hover {
@@ -303,6 +324,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         margin-top: 0.3rem;
     }
 
+    .btn-submit {
+        background: var(--accent);
+        color: var(--text);
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
+    }
+
+    .btn-submit:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
     .checkbox-group label {
         color: var(--text-muted);
         font-size: 0.9rem;
@@ -312,6 +352,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     @media (max-width: 480px) {
         .page-container {
             padding: 0 1.2rem;
+        }
+
+        .page-title {
+            font-size: 1.7rem;
         }
     }
 
@@ -538,7 +582,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
                             <label for="consentement">J'accepte que mes données soient utilisées pour traiter ma demande de devis. *</label>
                         </div>
 
-                        <button type="submit" class="btn-submit" style="background: var(--accent); color: var(--text); padding: 1rem 2rem; border: none; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%;">Envoyer</button>
+                        <button type="submit" class="btn-submit">Envoyer</button>
                     </form>
                 </div>
 

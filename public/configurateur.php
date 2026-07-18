@@ -226,11 +226,14 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
         font-size: .88rem;
         font-weight: bold;
         cursor: pointer;
-        transition: border-color .15s ease;
+        box-shadow: var(--shadow-sm);
+        transition: border-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
 
     .preset-btn:hover {
         border-color: var(--accent-2);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
     }
 
     .message {
@@ -256,10 +259,11 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
 
     .config-section {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 1.6rem;
         margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .config-section-title {
@@ -290,20 +294,23 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
         gap: .4rem;
         background: var(--surface-alt);
         border: 2px solid transparent;
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         padding: 1rem;
         cursor: pointer;
-        transition: border-color .15s ease, transform .1s ease;
+        transition: border-color var(--ease), transform var(--ease), box-shadow var(--ease);
         position: relative;
     }
 
     .option-card:hover {
         border-color: var(--accent-2);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
     }
 
     .option-card.selected {
         border-color: var(--accent);
         background: var(--surface-deep);
+        box-shadow: var(--shadow-sm);
     }
 
     .option-card.hidden-incompatible {
@@ -313,11 +320,47 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
     .option-card input[type="radio"],
     .option-card input[type="checkbox"] {
         position: absolute;
-        top: .8rem;
-        right: .8rem;
-        width: 16px;
-        height: 16px;
-        accent-color: var(--accent);
+        top: .9rem;
+        right: .9rem;
+        width: 22px;
+        height: 22px;
+        margin: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: var(--surface-deep);
+        box-shadow: inset 0 0 0 2px var(--text-muted);
+        cursor: pointer;
+        transition: box-shadow var(--ease), background-color var(--ease);
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    .option-card input[type="radio"] {
+        border-radius: 50%;
+    }
+
+    .option-card input[type="checkbox"] {
+        border-radius: 6px;
+    }
+
+    .option-card input[type="radio"]:checked,
+    .option-card input[type="checkbox"]:checked {
+        background-color: var(--accent);
+        box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .option-card input[type="radio"]:checked {
+        background-image: radial-gradient(circle, #fff 28%, transparent 30%);
+    }
+
+    .option-card input[type="checkbox"]:checked {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3 8 6.5 11.5 13 4.5'/%3E%3C/svg%3E");
+        background-size: 14px;
+    }
+
+    .option-card input[type="radio"]:hover,
+    .option-card input[type="checkbox"]:hover {
+        box-shadow: inset 0 0 0 2px var(--accent-2);
     }
 
     .option-icon {
@@ -327,7 +370,7 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
     .option-name {
         font-weight: bold;
         color: var(--text);
-        padding-right: 1.4rem;
+        padding-right: 1.8rem;
     }
 
     .option-specs {
@@ -360,11 +403,12 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
 
     .config-summary {
         background: var(--surface);
-        border: 2px solid var(--surface-alt);
-        border-radius: 12px;
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
         padding: 1.5rem;
         position: sticky;
         top: 128px;
+        box-shadow: var(--shadow-md);
     }
 
     .config-summary h3 {
@@ -431,10 +475,11 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
         width: 100%;
         padding: .6rem;
         border: 2px solid var(--surface-alt);
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         background: var(--surface-deep);
         color: var(--text);
         font-size: .85rem;
+        transition: border-color var(--ease);
     }
 
     .config-contact input:focus,
@@ -478,14 +523,17 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
         color: #fff;
         padding: .9rem;
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
 
     .btn-submit-config:hover {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
 
     .btn-reset-config {
@@ -494,10 +542,11 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
         border: 2px solid var(--surface-alt);
         color: var(--text-muted);
         padding: .6rem;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         font-size: .82rem;
         cursor: pointer;
         margin-bottom: .8rem;
+        transition: border-color var(--ease), color var(--ease);
     }
 
     .btn-reset-config:hover {
@@ -511,14 +560,17 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
         color: #fff;
         padding: .9rem;
         border: none;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
+        transition: background-color var(--ease), transform var(--ease), box-shadow var(--ease);
     }
 
     .btn-add-cart:hover {
         background: var(--accent-2-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
 
     .cart-hint {
