@@ -53,6 +53,9 @@ if ($_POST) {
             if ($action === 'delete_rdv' && isset($_POST['rdv_id'])) {
                 $pdo->prepare('DELETE FROM rdv WHERE id = ?')->execute([$_POST['rdv_id']]);
                 $message = 'Rendez-vous supprimé avec succès';
+            } elseif ($action === 'mark_rdv_vu' && isset($_POST['rdv_id'])) {
+                $pdo->prepare('UPDATE rdv SET vu = 1 WHERE id = ?')->execute([$_POST['rdv_id']]);
+                $message = 'Rendez-vous marqué comme vu';
             } elseif ($action === 'update_statut' && isset($_POST['commande_id'], $_POST['statut'])) {
                 if (array_key_exists($_POST['statut'], $statuts)) {
                     $pdo->prepare('UPDATE commandes SET statut = ? WHERE id = ?')->execute([$_POST['statut'], $_POST['commande_id']]);
@@ -182,8 +185,12 @@ try {
 $is_logged_in = true;
 $user_role = 'admin';
 $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int) $m['lu'] === 0; }));
+$rdvNonVus = count(array_filter($rdv_list, function ($r) { return (int) $r['vu'] === 0; }));
+$devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['statut'] === 'nouveau'; }));
 ?>
 <?php include 'header.php'; ?>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 <style>
     .admin-container {
@@ -191,6 +198,38 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
         margin: 2rem auto;
         padding: 0 2rem;
     }
+
+    /* Calendrier flatpickr thémé pour coller aux couleurs du site */
+    .flatpickr-calendar {
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
+        box-shadow: none;
+        color: var(--text);
+    }
+    .flatpickr-months, .flatpickr-weekdays { background: var(--surface); }
+    .flatpickr-month, .flatpickr-current-month, .flatpickr-current-month input.cur-year {
+        color: var(--text);
+        fill: var(--text);
+    }
+    .flatpickr-current-month .flatpickr-monthDropdown-months {
+        background: var(--surface);
+        color: var(--text);
+    }
+    span.flatpickr-weekday { background: var(--surface); color: var(--text-muted); }
+    .flatpickr-day { color: var(--text); }
+    .flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover {
+        color: var(--text-muted);
+        opacity: .35;
+    }
+    .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: var(--text-muted); opacity: .4; }
+    .flatpickr-day:hover { background: var(--surface-alt); }
+    .flatpickr-day.today { border-color: var(--accent-2); }
+    .flatpickr-day.selected, .flatpickr-day.selected:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+    .flatpickr-prev-month svg, .flatpickr-next-month svg { fill: var(--text); }
 
     .admin-title {
         font-size: 2rem;
@@ -247,6 +286,19 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
     .tab-btn.active {
         color: var(--accent-2);
         border-bottom-color: var(--accent-2);
+    }
+
+    .tab-badge {
+        display: inline-block;
+        min-width: 18px;
+        padding: 1px 5px;
+        margin-left: .4rem;
+        border-radius: 9px;
+        background: var(--accent);
+        color: #fff;
+        font-size: .68rem;
+        font-weight: 800;
+        line-height: 1.4;
     }
 
     .tab-panel {
@@ -505,13 +557,13 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
         <?php endif; ?>
 
         <div class="tabs" id="adminTabs">
-            <button type="button" class="tab-btn active" data-tab="rdv">Rendez-vous</button>
-            <button type="button" class="tab-btn" data-tab="devis">Devis</button>
+            <button type="button" class="tab-btn active" data-tab="rdv">Rendez-vous<?php if ($rdvNonVus > 0): ?><span class="tab-badge"><?php echo $rdvNonVus; ?></span><?php endif; ?></button>
+            <button type="button" class="tab-btn" data-tab="devis">Devis<?php if ($devisNonTraites > 0): ?><span class="tab-badge"><?php echo $devisNonTraites; ?></span><?php endif; ?></button>
             <button type="button" class="tab-btn" data-tab="commandes">Commandes</button>
             <button type="button" class="tab-btn" data-tab="produits">Produits</button>
             <button type="button" class="tab-btn" data-tab="promos">Codes promo</button>
             <button type="button" class="tab-btn" data-tab="avis">Avis clients</button>
-            <button type="button" class="tab-btn" data-tab="messages">Messages</button>
+            <button type="button" class="tab-btn" data-tab="messages">Messages<?php if ($messagesNonLus > 0): ?><span class="tab-badge"><?php echo $messagesNonLus; ?></span><?php endif; ?></button>
             <button type="button" class="tab-btn" data-tab="emails">Emails</button>
             <button type="button" class="tab-btn" data-tab="utilisateurs">Utilisateurs</button>
         </div>
@@ -523,18 +575,27 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
                 <div class="table-scroll">
                 <table class="data-table">
                     <thead>
-                        <tr><th>Nom</th><th>Email</th><th>Service</th><th>Boutique</th><th>Date</th><th>Action</th></tr>
+                        <tr><th>Statut</th><th>Nom</th><th>Email</th><th>Service</th><th>Boutique</th><th>Date</th><th>Actions</th></tr>
                     </thead>
                     <tbody>
                         <?php foreach ($rdv_list as $rdv): ?>
                         <tr>
+                            <td><span class="badge <?php echo $rdv['vu'] ? 'read' : 'unread'; ?>"><?php echo $rdv['vu'] ? 'Vu' : 'Nouveau'; ?></span></td>
                             <td><?php echo htmlspecialchars($rdv['nom'] . ' ' . $rdv['prenom']); ?></td>
                             <td><?php echo htmlspecialchars($rdv['email']); ?></td>
                             <td><?php echo htmlspecialchars($rdv['service']); ?></td>
                             <td><?php echo htmlspecialchars($rdv['boutique']); ?></td>
                             <td><?php echo date('d/m/Y', strtotime($rdv['date_rdv'])); ?></td>
-                            <td>
-                                <form method="POST" style="display: inline;">
+                            <td class="inline-form">
+                                <?php if (!$rdv['vu']): ?>
+                                <form method="POST">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="mark_rdv_vu">
+                                    <input type="hidden" name="rdv_id" value="<?php echo $rdv['id']; ?>">
+                                    <button type="submit" class="btn-small">Marquer vu</button>
+                                </form>
+                                <?php endif; ?>
+                                <form method="POST">
                                     <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete_rdv">
                                     <input type="hidden" name="rdv_id" value="<?php echo $rdv['id']; ?>">
@@ -544,7 +605,7 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
                         </tr>
                         <?php endforeach; ?>
                         <?php if (empty($rdv_list)): ?>
-                            <tr><td colspan="6">Aucun rendez-vous pour le moment.</td></tr>
+                            <tr><td colspan="7">Aucun rendez-vous pour le moment.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -845,7 +906,7 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
                     </div>
                     <div>
                         <label>Expire le (optionnel)</label>
-                        <input type="date" name="date_expiration">
+                        <input type="text" id="date_expiration" name="date_expiration" autocomplete="off" placeholder="JJ/MM/AAAA">
                     </div>
                     <div>
                         <button type="submit">Créer</button>
@@ -1010,6 +1071,23 @@ $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int
                 btn.classList.add('active');
                 document.getElementById('tab-' + btn.getAttribute('data-tab')).classList.add('active');
             });
+        });
+    })();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+<script>
+    (function () {
+        var el = document.getElementById('date_expiration');
+        if (!el || typeof flatpickr === 'undefined') return;
+        flatpickr(el, {
+            locale: 'fr',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd/m/Y',
+            minDate: 'today',
+            disableMobile: true
         });
     })();
 </script>

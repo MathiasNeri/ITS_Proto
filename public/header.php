@@ -14,6 +14,21 @@ $cart_count = 0;
 if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
     $cart_count = array_sum($_SESSION['cart']);
 }
+
+// Notification admin : rendez-vous / demandes de devis / messages en attente
+$admin_notif_count = 0;
+if ($is_logged_in && $user_role === 'admin') {
+    try {
+        $pdoNotif = initDatabase();
+        $admin_notif_count = (int) $pdoNotif->query("SELECT
+            (SELECT COUNT(*) FROM rdv WHERE vu = 0) +
+            (SELECT COUNT(*) FROM devis WHERE statut = 'nouveau') +
+            (SELECT COUNT(*) FROM messages WHERE lu = 0)
+        ")->fetchColumn();
+    } catch (PDOException $e) {
+        $admin_notif_count = 0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -249,6 +264,22 @@ if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
 
         .user-link.admin {
             color: var(--accent);
+        }
+
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 16px;
+            height: 16px;
+            margin-left: .3rem;
+            padding: 0 4px;
+            border-radius: 9px;
+            background: var(--accent);
+            color: #fff;
+            font-size: .62rem;
+            font-weight: 800;
+            line-height: 1;
         }
 
         .user-link.active {
@@ -505,7 +536,7 @@ if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
                     <?php if ($is_logged_in): ?>
                         <a href="profil.php" class="user-link <?php echo ($current_page === 'profil') ? 'active' : ''; ?>">Profil</a>
                         <?php if ($user_role === 'admin'): ?>
-                            <a href="administration.php" class="user-link admin <?php echo ($current_page === 'administration') ? 'active' : ''; ?>">Admin</a>
+                            <a href="administration.php" class="user-link admin <?php echo ($current_page === 'administration') ? 'active' : ''; ?>">Admin<?php if ($admin_notif_count > 0): ?><span class="admin-badge"><?php echo $admin_notif_count; ?></span><?php endif; ?></a>
                         <?php endif; ?>
                         <a href="logout.php" class="user-link">Déconnexion</a>
                     <?php else: ?>

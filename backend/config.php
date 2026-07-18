@@ -88,6 +88,7 @@ function initDatabase() {
         service TEXT NOT NULL,
         date_rdv TEXT NOT NULL,
         message TEXT,
+        vu INTEGER NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -211,6 +212,9 @@ function initDatabase() {
     )");
 
     // Migrations légères pour les bases créées avant l'ajout de ces colonnes
+    if (!columnExists($pdo, 'rdv', 'vu')) {
+        $pdo->exec("ALTER TABLE rdv ADD COLUMN vu INTEGER NOT NULL DEFAULT 0");
+    }
     if (!columnExists($pdo, 'produits', 'stock')) {
         $pdo->exec("ALTER TABLE produits ADD COLUMN stock INTEGER NOT NULL DEFAULT 0");
     }

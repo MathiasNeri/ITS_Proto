@@ -46,12 +46,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
 ?>
 <?php include 'header.php'; ?>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
 <style>
     .page-container {
         max-width: 800px;
         margin: 2rem auto;
         padding: 0 2rem;
     }
+
+    /* Calendrier flatpickr thémé pour coller aux couleurs du site */
+    .flatpickr-calendar {
+        background: var(--surface);
+        border: 2px solid var(--surface-alt);
+        box-shadow: none;
+        color: var(--text);
+    }
+    .flatpickr-months, .flatpickr-weekdays { background: var(--surface); }
+    .flatpickr-month, .flatpickr-current-month, .flatpickr-current-month input.cur-year {
+        color: var(--text);
+        fill: var(--text);
+    }
+    .flatpickr-current-month .flatpickr-monthDropdown-months {
+        background: var(--surface);
+        color: var(--text);
+    }
+    span.flatpickr-weekday { background: var(--surface); color: var(--text-muted); }
+    .flatpickr-day { color: var(--text); }
+    .flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover {
+        color: var(--text-muted);
+        opacity: .35;
+    }
+    .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: var(--text-muted); opacity: .4; }
+    .flatpickr-day:hover { background: var(--surface-alt); }
+    .flatpickr-day.today { border-color: var(--accent-2); }
+    .flatpickr-day.selected, .flatpickr-day.selected:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+    .flatpickr-prev-month svg, .flatpickr-next-month svg { fill: var(--text); }
     
     .page-title {
         font-size: 2.5rem;
@@ -224,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
             
             <div class="form-group">
                 <label for="date">Date souhaitée *</label>
-                <input type="date" id="date" name="date" min="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($_POST['date'] ?? ''); ?>" required>
+                <input type="text" id="date" name="date" data-min-date="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($_POST['date'] ?? ''); ?>" autocomplete="off" placeholder="JJ/MM/AAAA" required>
             </div>
             
             <div class="form-group">
@@ -244,5 +278,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         </div>
     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+<script>
+    (function () {
+        var el = document.getElementById('date');
+        if (!el || typeof flatpickr === 'undefined') return;
+        flatpickr(el, {
+            locale: 'fr',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd/m/Y',
+            minDate: el.getAttribute('data-min-date'),
+            disableMobile: true
+        });
+    })();
+</script>
 
 <?php include 'footer.php'; ?>
