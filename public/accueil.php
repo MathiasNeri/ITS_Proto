@@ -7,6 +7,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $is_logged_in = checkAuth();
 $user_role = $_SESSION['user_role'] ?? '';
+
+$page_title = 'Accueil';
+$page_description = "Vente et réparation de téléphones, ordinateurs et tablettes à Pierrefeu-du-Var (83390), toutes marques. Neuf, reconditionné, occasion. Devis gratuit en ligne.";
 ?>
 <?php include 'header.php'; ?>
 

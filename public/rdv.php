@@ -24,6 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
     // Validation
     if (!csrfVerify()) {
         $error = 'Session expirée, merci de réessayer.';
+    } elseif (!honeypotPasses()) {
+        // Soumission détectée comme un bot : succès silencieux, rien n'est enregistré.
+        $success = 'Votre demande de rendez-vous a été envoyée avec succès !';
     } elseif (empty($nom) || empty($prenom) || empty($email) || empty($telephone) || empty($boutique) || empty($service) || empty($date)) {
         $error = 'Tous les champs obligatoires doivent être remplis';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -43,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         }
     }
 }
+
+$page_title = 'Prendre rendez-vous';
+$page_description = "Réservez votre rendez-vous pour un diagnostic ou une réparation dans notre boutique de Pierrefeu-du-Var.";
 ?>
 <?php include 'header.php'; ?>
 
@@ -222,6 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         
         <form method="POST" class="rdv-form">
             <?php echo csrfField(); ?>
+            <?php echo honeypotField(); ?>
             <div class="form-row">
                 <div class="form-group">
                     <label for="nom">Nom *</label>

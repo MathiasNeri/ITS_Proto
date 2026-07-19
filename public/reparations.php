@@ -24,6 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
 
     if (!csrfVerify()) {
         $error = 'Session expirée, merci de réessayer.';
+    } elseif (!honeypotPasses()) {
+        // Soumission détectée comme un bot : succès silencieux, rien n'est enregistré ni envoyé.
+        $success = 'Votre demande de devis a bien été envoyée ! Nous revenons vers vous rapidement.';
     } elseif (empty($materiel) || empty($nom) || empty($prenom) || empty($adresse) || empty($code_postal) || empty($ville) || empty($email) || empty($telephone)) {
         $error = 'Tous les champs obligatoires doivent être remplis.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -56,6 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
         }
     }
 }
+
+$page_title = 'Réparations';
+$page_description = "Réparation de smartphones, tablettes et ordinateurs toutes marques (Windows, Apple, Linux, Android, iOS) à Pierrefeu-du-Var. Demande de devis gratuite en ligne.";
 ?>
 <?php include 'header.php'; ?>
 
@@ -504,6 +510,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nom'])) {
                 <div class="devis-form-card">
                     <form method="POST" class="devis-form" enctype="multipart/form-data">
                         <?php echo csrfField(); ?>
+                        <?php echo honeypotField(); ?>
 
                         <div class="form-group">
                             <label for="materiel">Type de matériel *</label>

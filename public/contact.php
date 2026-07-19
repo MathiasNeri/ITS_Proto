@@ -18,6 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!csrfVerify()) {
         $error = 'Session expirée, merci de réessayer.';
+    } elseif (!honeypotPasses()) {
+        // Soumission détectée comme un bot : succès silencieux, rien n'est enregistré ni envoyé.
+        $success = 'Votre message a bien été envoyé, nous vous répondrons rapidement.';
     } elseif (empty($nom) || empty($email) || empty($sujet) || empty($messageTexte)) {
         $error = 'Tous les champs sont obligatoires';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -34,6 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$page_title = 'Contact';
+$page_description = "Contactez ITS Pierrefeu — informatique et téléphonie. Formulaire de contact, adresse et horaires de la boutique de Pierrefeu-du-Var.";
 ?>
 <?php include 'header.php'; ?>
 
@@ -276,6 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form method="POST">
                     <?php echo csrfField(); ?>
+                    <?php echo honeypotField(); ?>
                     <div class="form-group">
                         <label for="nom">Nom</label>
                         <input type="text" id="nom" name="nom" value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>" required>

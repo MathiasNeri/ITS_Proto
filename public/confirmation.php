@@ -49,6 +49,8 @@ if (isset($_GET['session_id'])) {
 } else {
     $error = 'Aucune commande à confirmer.';
 }
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 

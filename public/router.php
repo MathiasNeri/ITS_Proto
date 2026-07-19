@@ -17,5 +17,18 @@ if ($path === '/') {
     return true;
 }
 
+// /sitemap.xml est généré dynamiquement (liste les produits en base) mais
+// doit être servi avec ce chemin exact, sans extension .php, pour que les
+// moteurs de recherche le trouvent à l'endroit attendu.
+if ($path === '/sitemap.xml') {
+    require __DIR__ . '/sitemap.php';
+    return true;
+}
+
+if ($path === '/robots.txt') {
+    require __DIR__ . '/robots.php';
+    return true;
+}
+
 http_response_code(404);
 require __DIR__ . '/404.php';

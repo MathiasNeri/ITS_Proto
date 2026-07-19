@@ -27,6 +27,8 @@ $statutLabels = [
     'livree'         => ['label' => 'Livrée / retirée', 'color' => 'var(--success)'],
     'annulee'        => ['label' => 'Annulée', 'color' => 'var(--accent)'],
 ];
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 

@@ -23,14 +23,15 @@ if ($_POST && !csrfVerify()) {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
-    
+    $erreurPassword = erreurMotDePasse($password);
+
     // Validation
     if (empty($nom) || empty($prenom) || empty($email) || empty($password)) {
         $error = 'Tous les champs sont obligatoires';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Email invalide';
-    } elseif (strlen($password) < 6) {
-        $error = 'Le mot de passe doit contenir au moins 6 caractères';
+    } elseif ($erreurPassword) {
+        $error = $erreurPassword;
     } elseif ($password !== $confirm_password) {
         $error = 'Les mots de passe ne correspondent pas';
     } elseif (rateLimitDepasse('inscription:' . clientIp(), 5, 60)) {
@@ -59,6 +60,8 @@ if ($_POST && !csrfVerify()) {
         }
     }
 }
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 
@@ -176,6 +179,32 @@ if ($_POST && !csrfVerify()) {
         color: var(--accent-2-hover);
         text-decoration: underline;
     }
+
+    .password-strength {
+        margin-top: .5rem;
+    }
+
+    .password-strength-bar {
+        height: 5px;
+        border-radius: 3px;
+        background: var(--surface-alt);
+        overflow: hidden;
+    }
+
+    .password-strength-bar span {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: var(--accent);
+        transition: width var(--ease, .2s ease), background-color var(--ease, .2s ease);
+    }
+
+    .password-strength-label {
+        display: block;
+        margin-top: .35rem;
+        font-size: .76rem;
+        color: var(--text-muted);
+    }
 </style>
 
 <main class="main-content">
@@ -211,9 +240,13 @@ if ($_POST && !csrfVerify()) {
             
             <div class="form-group">
                 <label for="password">Mot de passe :</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Au moins 8 caractères, avec au moins une lettre et un chiffre" required>
+                <div class="password-strength" id="passwordStrength">
+                    <div class="password-strength-bar"><span id="passwordStrengthFill"></span></div>
+                    <span class="password-strength-label" id="passwordStrengthLabel">Au moins 8 caractères, avec une lettre et un chiffre</span>
+                </div>
             </div>
-            
+
             <div class="form-group">
                 <label for="confirm_password">Confirmer le mot de passe :</label>
                 <input type="password" id="confirm_password" name="confirm_password" required>
@@ -228,5 +261,37 @@ if ($_POST && !csrfVerify()) {
     </div>
 </div>
 </main>
+
+<script>
+    (function () {
+        var input = document.getElementById('password');
+        var fill = document.getElementById('passwordStrengthFill');
+        var label = document.getElementById('passwordStrengthLabel');
+        if (!input || !fill || !label) return;
+
+        function evaluer(mdp) {
+            if (!mdp) return { pct: 0, texte: 'Au moins 8 caractères, avec une lettre et un chiffre', couleur: 'var(--accent)' };
+            var aLettre = /[a-zA-Z]/.test(mdp);
+            var aChiffre = /[0-9]/.test(mdp);
+            var aSpecial = /[^a-zA-Z0-9]/.test(mdp);
+            var assezLong = mdp.length >= 8;
+
+            if (!assezLong || !aLettre || !aChiffre) {
+                return { pct: 33, texte: 'Trop faible : 8 caractères minimum, avec une lettre et un chiffre', couleur: 'var(--accent)' };
+            }
+            if (mdp.length >= 12 && aSpecial) {
+                return { pct: 100, texte: 'Mot de passe robuste', couleur: 'var(--success)' };
+            }
+            return { pct: 66, texte: 'Correct — plus long et avec un symbole, ce serait encore mieux', couleur: '#d8a316' };
+        }
+
+        input.addEventListener('input', function () {
+            var etat = evaluer(input.value);
+            fill.style.width = etat.pct + '%';
+            fill.style.backgroundColor = etat.couleur;
+            label.textContent = etat.texte;
+        });
+    })();
+</script>
 
 <?php include 'footer.php'; ?>

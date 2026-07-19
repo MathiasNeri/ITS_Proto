@@ -32,8 +32,8 @@ if ($_POST) {
             $error = 'L\'email est requis';
         } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Format d\'email invalide';
-        } elseif (!empty($new_password) && strlen($new_password) < 6) {
-            $error = 'Le nouveau mot de passe doit contenir au moins 6 caractères';
+        } elseif (!empty($new_password) && erreurMotDePasse($new_password)) {
+            $error = erreurMotDePasse($new_password);
         } elseif (!empty($new_password) && $new_password !== $confirm_password) {
             $error = 'Les mots de passe ne correspondent pas';
         } else {
@@ -74,6 +74,8 @@ if ($_POST) {
         }
     }
 }
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 
@@ -216,7 +218,7 @@ if ($_POST) {
 
                 <div class="form-group">
                     <label for="password">Nouveau mot de passe (laisser vide pour ne pas changer) :</label>
-                    <input type="password" id="password" name="password">
+                    <input type="password" id="password" name="password" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Au moins 8 caractères, avec au moins une lettre et un chiffre">
                 </div>
 
                 <div class="form-group">

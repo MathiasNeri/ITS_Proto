@@ -6,6 +6,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $is_logged_in = checkAuth();
 $user_role = $_SESSION['user_role'] ?? '';
+
+$page_title = 'Tarifs';
+$page_description = "Grille tarifaire de nos réparations informatiques et téléphonie à Pierrefeu-du-Var : diagnostic, écran, batterie, logiciel.";
 ?>
 <?php include 'header.php'; ?>
 

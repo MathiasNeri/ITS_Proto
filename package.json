@@ -1,0 +1,14 @@
+{
+  "name": "its-proto-e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tests de bout en bout (Playwright) pour ITS_Proto. Le site lui-même reste du PHP pur sans dépendance — ce package.json ne sert qu'à l'outillage de test.",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

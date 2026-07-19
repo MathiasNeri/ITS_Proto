@@ -26,10 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valide) {
     $password = $_POST['password'] ?? '';
     $confirm = $_POST['confirm_password'] ?? '';
 
+    $erreurPassword = erreurMotDePasse($password);
+
     if (!csrfVerify()) {
         $error = 'Session expirée, merci de réessayer.';
-    } elseif (strlen($password) < 6) {
-        $error = 'Le mot de passe doit contenir au moins 6 caractères.';
+    } elseif ($erreurPassword) {
+        $error = $erreurPassword;
     } elseif ($password !== $confirm) {
         $error = 'Les mots de passe ne correspondent pas.';
     } else {
@@ -142,7 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valide) {
                     <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
                     <div class="form-group">
                         <label for="password">Nouveau mot de passe</label>
-                        <input type="password" id="password" name="password" required>
+                        <input type="password" id="password" name="password" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Au moins 8 caractères, avec au moins une lettre et un chiffre" required>
+                        <small style="display:block;margin-top:.4rem;color:var(--text-muted);font-size:.78rem;">Au moins 8 caractères, avec une lettre et un chiffre.</small>
                     </div>
                     <div class="form-group">
                         <label for="confirm_password">Confirmer le mot de passe</label>

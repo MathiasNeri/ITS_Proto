@@ -178,6 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'comma
         }
     }
 }
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 

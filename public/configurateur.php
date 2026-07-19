@@ -91,6 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($direction, ['devis', 'pan
 
     if (!csrfVerify()) {
         $error = 'Session expirée, merci de réessayer.';
+    } elseif ($direction === 'devis' && !honeypotPasses()) {
+        // Soumission détectée comme un bot : succès silencieux, rien n'est enregistré ni envoyé.
+        $success = 'Votre configuration a bien été envoyée ! Nous revenons vers vous avec un devis détaillé et les délais de montage.';
     } elseif (!empty($manquants)) {
         $error = 'Merci de sélectionner : ' . implode(', ', $manquants) . '.';
     } elseif ($direction === 'devis' && (empty($nom) || empty($prenom) || empty($adresse) || empty($code_postal) || empty($ville) || empty($email) || empty($telephone))) {
@@ -177,6 +180,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($direction, ['devis', 'pan
 
 $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
 $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_POST['comp_peripherique'] ?? [])) : [];
+
+$page_title = 'Configurateur PC';
+$page_description = "Configurez votre PC sur mesure : gaming ou bureautique, composants garantis compatibles, prix en temps réel. Devis ou achat en ligne.";
 ?>
 <?php include 'header.php'; ?>
 
@@ -658,6 +664,7 @@ $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_PO
 
         <form method="POST" id="configForm">
             <?php echo csrfField(); ?>
+            <?php echo honeypotField(); ?>
             <div class="configurateur-layout">
                 <div>
                     <?php foreach ($categories as $type): ?>

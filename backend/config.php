@@ -487,6 +487,47 @@ function clientIp() {
 }
 
 /**
+ * Anti-spam léger pour les formulaires publics (contact, devis, RDV) sans
+ * captcha tiers (cohérent avec le choix du site de n'utiliser aucun
+ * traceur/service externe) : un champ piège invisible que seuls les bots
+ * remplissent, plus un délai minimal de remplissage. À inclure dans le
+ * <form> avec honeypotField(), à vérifier en tout début de traitement avec
+ * honeypotPasses() — si faux, traiter la soumission comme un succès silencieux
+ * (ne rien enregistrer/envoyer) pour ne pas indiquer au bot qu'il est bloqué.
+ */
+function honeypotField() {
+    return '<div class="hp-field" aria-hidden="true">
+        <label for="hp_website">Laissez ce champ vide</label>
+        <input type="text" id="hp_website" name="hp_website" tabindex="-1" autocomplete="off">
+    </div>
+    <input type="hidden" name="hp_ts" value="' . time() . '">';
+}
+
+function honeypotPasses() {
+    if (!empty($_POST['hp_website'])) {
+        return false;
+    }
+    $ts = (int) ($_POST['hp_ts'] ?? 0);
+    return $ts > 0 && (time() - $ts) >= 3;
+}
+
+/**
+ * Politique de mot de passe commune à l'inscription et à la réinitialisation.
+ * Retourne null si le mot de passe est valide, sinon un message d'erreur
+ * prêt à afficher. Longueur + mélange de caractères plutôt qu'une liste de
+ * caractères spéciaux obligatoires, pour rester réaliste à respecter.
+ */
+function erreurMotDePasse($password) {
+    if (strlen($password) < 8) {
+        return 'Le mot de passe doit contenir au moins 8 caractères.';
+    }
+    if (!preg_match('/[a-zA-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
+        return 'Le mot de passe doit contenir au moins une lettre et un chiffre.';
+    }
+    return null;
+}
+
+/**
  * Vrai si l'identifiant (email) a dépassé le nombre d'essais de connexion
  * autorisés sur la fenêtre glissante définie. Protège contre le brute-force
  * sans bannir définitivement (la fenêtre expire toute seule).
@@ -530,6 +571,7 @@ require_once __DIR__ . '/mail.php';
 require_once __DIR__ . '/stripe.php';
 require_once __DIR__ . '/commandes.php';
 require_once __DIR__ . '/devis.php';
+require_once __DIR__ . '/backup.php';
 
 // La base doit exister dès le chargement de la config (ex: profil.php
 // ouvre une connexion directe sans repasser par initDatabase()).

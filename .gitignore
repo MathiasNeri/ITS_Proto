@@ -14,6 +14,9 @@ database.sqlite
 # Fichiers joints uploadés par les clients (demandes de devis)
 database/uploads/
 
+# Sauvegardes automatiques de la base (voir backend/backup.php)
+database/backups/
+
 # Logs
 *.log
 logs/
@@ -50,11 +53,17 @@ desktop.ini
 *.swo
 *~
 
-# Node.js (si vous utilisez des outils de build)
+# Node.js (outillage de test E2E, voir tests/ et playwright.config.js)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Rapports Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Composer (si vous l'utilisez)
 vendor/

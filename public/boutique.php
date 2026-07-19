@@ -24,6 +24,9 @@ $tagLabels = [
     'occasion' => 'Occasion',
     'promo'    => 'Promo',
 ];
+
+$page_title = 'Boutique';
+$page_description = "Téléphones, ordinateurs, tablettes, pièces détachées et accessoires neufs, reconditionnés ou d'occasion — vente en boutique à Pierrefeu-du-Var ou livraison Colissimo.";
 ?>
 <?php include 'header.php'; ?>
 

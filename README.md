@@ -54,6 +54,36 @@ Puis ouvrez : http://localhost:8000
 
 **Utilisateurs :** Peuvent s'inscrire via le formulaire d'inscription
 
+## 🧪 Tests automatisés
+
+Le site lui-même reste du PHP pur sans dépendance. Les tests de bout en bout
+utilisent Playwright (Node.js) — outillage séparé, n'affecte pas le runtime PHP.
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+Chaque exécution repart d'une base SQLite vierge (recréée et re-remplie
+automatiquement au premier appel, comme en développement normal). Les tests
+tournent aussi automatiquement sur GitHub Actions à chaque push/PR
+(`.github/workflows/tests.yml`).
+
+## 💾 Sauvegardes de la base de données
+
+Une sauvegarde automatique (`VACUUM INTO`, cohérente même base active) se
+déclenche dès qu'un admin se connecte au panel et que la précédente date de
+plus de 24h — visible et téléchargeable depuis l'onglet **Maintenance** du
+panel admin. Si un serveur SMTP est configuré, elle est aussi envoyée par
+email en pièce jointe : c'est la copie qui survit à un redéploiement sur un
+hébergement à disque non persistant (ex. Render plan gratuit).
+
+Pour un vrai cron (hébergement à disque persistant, ou Render Cron Job) :
+```bash
+php backend/backup_cli.php
+```
+
 ## 🌐 Déploiement OVH
 
 Voir le fichier `DEPLOYMENT.md` pour le guide complet de déploiement sur OVH.

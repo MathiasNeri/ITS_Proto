@@ -35,6 +35,7 @@ $sousTotal = array_sum(array_map(function ($l) { return $l['prix_unitaire'] * $l
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
     <title>Facture <?php echo htmlspecialchars($commande['numero']); ?> — ITS</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }

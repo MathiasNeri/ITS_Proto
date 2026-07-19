@@ -50,6 +50,8 @@ if ($_POST) {
         }
     }
 }
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 

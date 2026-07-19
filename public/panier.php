@@ -60,6 +60,8 @@ foreach ($cartCustom as $customId => $entry) {
         'sous_total' => $sousTotal,
     ];
 }
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 

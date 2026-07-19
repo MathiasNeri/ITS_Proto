@@ -11,6 +11,7 @@ if (!checkAuth() || $_SESSION['user_role'] !== 'admin') {
 }
 
 $pdo = initDatabase();
+sauvegardeQuotidienneSiNecessaire();
 
 $categories = [
     'tel'   => 'Téléphones',
@@ -149,6 +150,10 @@ if ($_POST) {
                 }
                 $pdo->prepare('DELETE FROM devis WHERE id = ?')->execute([$_POST['devis_id']]);
                 $message = 'Demande de devis supprimée';
+            } elseif ($action === 'creer_sauvegarde') {
+                $cheminSauvegarde = creerSauvegardeBaseDeDonnees();
+                $envoyee = envoyerSauvegardeParEmail($cheminSauvegarde);
+                $message = 'Sauvegarde créée (' . basename($cheminSauvegarde) . ')' . ($envoyee ? ', envoyée par email à l\'admin.' : '. SMTP non configuré : elle reste locale uniquement.');
             }
         } catch (PDOException $e) {
             $error = 'Erreur lors du traitement de l\'action';
@@ -182,11 +187,18 @@ try {
     $lignesParCommande = [];
 }
 
+// Sauvegardes locales disponibles (les plus récentes en premier)
+$backups_list = glob(cheminDossierSauvegardes() . '/its-backup-*.sqlite') ?: [];
+rsort($backups_list);
+$derniere_sauvegarde = !empty($backups_list) ? filemtime($backups_list[0]) : null;
+
 $is_logged_in = true;
 $user_role = 'admin';
 $messagesNonLus = count(array_filter($messages_list, function ($m) { return (int) $m['lu'] === 0; }));
 $rdvNonVus = count(array_filter($rdv_list, function ($r) { return (int) $r['vu'] === 0; }));
 $devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['statut'] === 'nouveau'; }));
+
+$page_noindex = true;
 ?>
 <?php include 'header.php'; ?>
 
@@ -566,6 +578,7 @@ $devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['st
             <button type="button" class="tab-btn" data-tab="messages">Messages<?php if ($messagesNonLus > 0): ?><span class="tab-badge"><?php echo $messagesNonLus; ?></span><?php endif; ?></button>
             <button type="button" class="tab-btn" data-tab="emails">Emails</button>
             <button type="button" class="tab-btn" data-tab="utilisateurs">Utilisateurs</button>
+            <button type="button" class="tab-btn" data-tab="maintenance">Maintenance</button>
         </div>
 
         <!-- RDV -->
@@ -1068,6 +1081,46 @@ $devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['st
                             <td><?php echo date('d/m/Y', strtotime($user['created_at'])); ?></td>
                         </tr>
                         <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAINTENANCE -->
+        <div class="tab-panel" id="tab-maintenance">
+            <div class="admin-card">
+                <h3 class="card-title">Sauvegardes de la base de données</h3>
+                <?php if (!isSmtpConfigured()): ?>
+                    <div class="message-box" style="background:#d8a316;color:#1c1c1c;">⚠️ SMTP non configuré : les sauvegardes restent uniquement locales et seront perdues au prochain redéploiement si l'hébergement n'a pas de disque persistant (c'est le cas du plan Render gratuit). Configurez <code>smtp_host</code> pour qu'elles soient aussi envoyées par email à l'admin.</div>
+                <?php endif; ?>
+                <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem;">
+                    Une sauvegarde automatique est déclenchée dès qu'un admin se connecte et que la précédente date de plus de 24h.
+                    Dernière sauvegarde locale :
+                    <strong style="color:var(--text);"><?php echo $derniere_sauvegarde ? date('d/m/Y à H:i', $derniere_sauvegarde) : 'aucune pour le moment'; ?></strong>.
+                </p>
+                <form method="POST" style="margin-bottom:1.5rem;">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="creer_sauvegarde">
+                    <button type="submit" class="btn-small">Créer une sauvegarde maintenant</button>
+                </form>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Fichier</th><th>Date</th><th>Taille</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($backups_list as $fichierSauvegarde): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars(basename($fichierSauvegarde)); ?></td>
+                            <td><?php echo date('d/m/Y H:i', filemtime($fichierSauvegarde)); ?></td>
+                            <td><?php echo round(filesize($fichierSauvegarde) / 1024 / 1024, 2); ?> Mo</td>
+                            <td><a href="backup-download.php?fichier=<?php echo urlencode(basename($fichierSauvegarde)); ?>" class="btn-small" style="text-decoration:none;display:inline-block;">Télécharger</a></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($backups_list)): ?>
+                            <tr><td colspan="4">Aucune sauvegarde locale pour le moment.</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
                 </div>

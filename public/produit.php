@@ -72,6 +72,15 @@ if ($produit) {
         $avisMoyenne = round(array_sum(array_column($avisListe, 'note')) / count($avisListe));
     }
 }
+
+if ($produit) {
+    $page_title = $produit['nom'];
+    $page_description = trim($produit['description']) !== ''
+        ? mb_substr(trim($produit['description']), 0, 155)
+        : $produit['nom'] . ' — ' . number_format($produit['prix'], 2, ',', ' ') . ' € — ITS Pierrefeu.';
+} else {
+    $page_noindex = true;
+}
 ?>
 <?php include 'header.php'; ?>
 
@@ -404,6 +413,33 @@ if ($produit) {
                 <a href="boutique.php" style="color: var(--accent-2); font-weight: bold;">&larr; Retour à la boutique</a>
             </div>
         <?php else: ?>
+            <script type="application/ld+json">
+            <?php
+                $schemaProduit = [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'Product',
+                    'name' => $produit['nom'],
+                    'description' => $produit['description'] !== '' ? $produit['description'] : $produit['nom'],
+                    'category' => $categories[$produit['categorie']] ?? $produit['categorie'],
+                    'offers' => [
+                        '@type' => 'Offer',
+                        'priceCurrency' => 'EUR',
+                        'price' => number_format((float) $produit['prix'], 2, '.', ''),
+                        'availability' => (int) $produit['stock'] > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                        'url' => rtrim($config['base_url'], '/') . '/produit.php?id=' . $produit['id'],
+                    ],
+                ];
+                if (!empty($avisListe)) {
+                    $schemaProduit['aggregateRating'] = [
+                        '@type' => 'AggregateRating',
+                        'ratingValue' => $avisMoyenne,
+                        'reviewCount' => count($avisListe),
+                    ];
+                }
+                echo json_encode($schemaProduit, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            ?>
+            </script>
+
             <div class="breadcrumb">
                 <a href="boutique.php">Boutique</a> &rsaquo;
                 <a href="boutique.php?cat=<?php echo htmlspecialchars($produit['categorie']); ?>"><?php echo $categories[$produit['categorie']] ?? $produit['categorie']; ?></a> &rsaquo;

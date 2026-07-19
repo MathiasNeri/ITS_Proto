@@ -33,13 +33,31 @@ if ($is_logged_in && $user_role === 'admin') {
         $admin_notif_count = 0;
     }
 }
+// Chaque page peut définir $page_title / $page_description / $page_noindex
+// avant d'inclure ce fichier pour personnaliser le référencement ; sinon on
+// retombe sur des valeurs par défaut pertinentes pour la page d'accueil.
+$titrePage = !empty($page_title) ? $page_title . ' — ' . $config['site_name'] : $config['site_name'] . ' - ' . $config['site_title'];
+$descriptionPage = !empty($page_description) ? $page_description
+    : "ITS — Informatique Téléphonie Service à Pierrefeu-du-Var (83390) : vente et réparation de téléphones, ordinateurs et tablettes, toutes marques. Neuf, reconditionné, occasion.";
+$urlCanonique = rtrim($config['base_url'], '/') . '/' . ltrim($_SERVER['REQUEST_URI'] ?? basename($_SERVER['SCRIPT_NAME']), '/');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $config['site_name']; ?> - <?php echo $config['site_title']; ?></title>
+    <title><?php echo htmlspecialchars($titrePage); ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($descriptionPage); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars($urlCanonique); ?>">
+    <?php if (!empty($page_noindex)): ?>
+        <meta name="robots" content="noindex, nofollow">
+    <?php endif; ?>
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="<?php echo htmlspecialchars($config['site_name']); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars($titrePage); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($descriptionPage); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($urlCanonique); ?>">
+    <meta property="og:image" content="<?php echo htmlspecialchars(rtrim($config['base_url'], '/') . '/images/logo-its.png'); ?>">
     <link rel="icon" type="image/png" href="images/logo-its.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,6 +156,17 @@ if ($is_logged_in && $user_role === 'admin') {
             outline: 2px solid var(--accent-2);
             outline-offset: 2px;
             border-radius: 4px;
+        }
+
+        /* Champ piège anti-spam (honeypot) : invisible pour un humain, mais
+           présent dans le DOM pour que les bots naïfs le remplissent. */
+        .hp-field {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
         }
 
         /* Header */
@@ -548,6 +577,35 @@ if ($is_logged_in && $user_role === 'admin') {
             }
         }
     </style>
+    <script type="application/ld+json">
+    <?php
+        // Données structurées LocalBusiness (schema.org) : n'inclut que des
+        // informations réellement vérifiées (voir mentions-legales.php —
+        // le téléphone et l'adresse de rue n'y sont pas encore renseignés,
+        // donc volontairement absents ici plutôt que d'y mettre une valeur
+        // inventée qui nuirait à la cohérence NAP recherchée par Google).
+        echo json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'ElectronicsStore',
+            'name' => $config['site_name'] . ' — ' . $config['site_title'],
+            'legalName' => 'S.A.S INFOCOM PIERREFEU',
+            'url' => rtrim($config['base_url'], '/') . '/accueil.php',
+            'image' => rtrim($config['base_url'], '/') . '/images/logo-its.png',
+            'email' => 'contact@its-reparation.fr',
+            'priceRange' => '€€',
+            'address' => [
+                '@type' => 'PostalAddress',
+                'addressLocality' => 'Pierrefeu-du-Var',
+                'postalCode' => '83390',
+                'addressCountry' => 'FR',
+            ],
+            'openingHoursSpecification' => [
+                ['@type' => 'OpeningHoursSpecification', 'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], 'opens' => '09:00', 'closes' => '18:00'],
+                ['@type' => 'OpeningHoursSpecification', 'dayOfWeek' => ['Saturday'], 'opens' => '09:00', 'closes' => '12:00'],
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    ?>
+    </script>
 </head>
 <body>
     <!-- Header -->
