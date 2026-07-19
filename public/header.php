@@ -58,7 +58,7 @@ $urlCanonique = rtrim($config['base_url'], '/') . '/' . ltrim($_SERVER['REQUEST_
     <meta property="og:description" content="<?php echo htmlspecialchars($descriptionPage); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars($urlCanonique); ?>">
     <meta property="og:image" content="<?php echo htmlspecialchars(rtrim($config['base_url'], '/') . '/images/logo-its.png'); ?>">
-    <link rel="icon" type="image/png" href="images/logo-its.png">
+    <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Autour+One&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
