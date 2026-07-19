@@ -83,19 +83,41 @@ $fraisLivraison = calculerFraisLivraison($modeLivraison, $sousTotal);
 $total = max(0, $sousTotal - $remise) + $fraisLivraison;
 
 // --- Validation finale et création de la commande + redirection paiement ---
+$boutiques = ['Pierrefeu' => 'Pierrefeu'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'commander') {
     $nom = trim($_POST['nom'] ?? '');
     $email = trim($_POST['email'] ?? '');
-    $adresse = trim($_POST['adresse'] ?? '');
+    $telephone = trim($_POST['telephone'] ?? '');
+    $adresseLigne1 = trim($_POST['adresse_ligne1'] ?? '');
+    $adresseLigne2 = trim($_POST['adresse_ligne2'] ?? '');
+    $codePostal = trim($_POST['code_postal'] ?? '');
+    $ville = trim($_POST['ville'] ?? '');
+    $boutique = trim($_POST['boutique'] ?? '');
+
+    if ($modeLivraison === 'colissimo') {
+        $adresseParts = [$adresseLigne1];
+        if ($adresseLigne2 !== '') {
+            $adresseParts[] = $adresseLigne2;
+        }
+        $adresseParts[] = trim($codePostal . ' ' . $ville);
+        $adresse = implode("\n", $adresseParts);
+    } else {
+        $adresse = 'Retrait en boutique — ' . $boutique;
+    }
 
     if (!csrfVerify()) {
         $error = 'Session expirée, merci de réessayer.';
     } elseif (empty($lignes)) {
         $error = 'Votre panier est vide.';
-    } elseif (empty($nom) || empty($email) || empty($adresse)) {
+    } elseif (empty($nom) || empty($email) || empty($telephone)) {
         $error = 'Tous les champs sont obligatoires.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Email invalide.';
+    } elseif ($modeLivraison === 'colissimo' && (empty($adresseLigne1) || !preg_match('/^\d{5}$/', $codePostal) || empty($ville))) {
+        $error = 'Merci de renseigner une adresse de livraison complète (adresse, code postal à 5 chiffres, ville).';
+    } elseif ($modeLivraison === 'boutique' && !array_key_exists($boutique, $boutiques)) {
+        $error = 'Merci de sélectionner une boutique de retrait.';
     } else {
         $rupture = null;
         foreach ($lignes as $ligne) {
@@ -110,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'comma
         } else {
             try {
                 $commande = creerCommandeEnAttente(
-                    $pdo, $lignes, $nom, $email, $adresse,
+                    $pdo, $lignes, $nom, $email, $telephone, $adresse,
                     $modeLivraison, $fraisLivraison,
                     $remiseInfo['code'], $remise, $total,
                     $_SESSION['user_id'] ?? null
@@ -192,20 +214,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'comma
     }
 
     .form-group input,
+    .form-group select,
     .form-group textarea {
         width: 100%;
         padding: .8rem;
         border: 2px solid var(--surface-alt);
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         background: var(--surface-alt);
         color: var(--text);
         font-size: 1rem;
+        transition: border-color var(--ease);
     }
 
     .form-group input:focus,
+    .form-group select:focus,
     .form-group textarea:focus {
         outline: none;
         border-color: var(--accent);
+    }
+
+    .form-group .optional {
+        font-weight: normal;
+        color: var(--text-muted);
+        font-size: .8rem;
+    }
+
+    .form-row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .address-autocomplete {
+        position: relative;
+    }
+
+    .address-suggestions {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        list-style: none;
+        margin: 0;
+        padding: .3rem;
+        background: var(--surface);
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow-md);
+        max-height: 240px;
+        overflow-y: auto;
+    }
+
+    .address-suggestions.show {
+        display: block;
+    }
+
+    .address-suggestions li {
+        padding: .6rem .7rem;
+        border-radius: 6px;
+        color: var(--text);
+        font-size: .88rem;
+        cursor: pointer;
+    }
+
+    .address-suggestions li:hover {
+        background: var(--surface-alt);
+        color: var(--accent-2);
+    }
+
+    @media (max-width: 560px) {
+        .form-row-2 {
+            grid-template-columns: 1fr;
+        }
     }
 
     .shipping-options {
@@ -486,14 +568,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'comma
                         <label for="nom">Nom complet</label>
                         <input type="text" id="nom" name="nom" value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>" required>
                     </div>
-                    <div class="form-group">
-                        <label for="email">E-mail</label>
-                        <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? $_SESSION['user_email'] ?? ''); ?>" required>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="email">E-mail</label>
+                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? $_SESSION['user_email'] ?? ''); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telephone">Téléphone</label>
+                            <input type="tel" id="telephone" name="telephone" value="<?php echo htmlspecialchars($_POST['telephone'] ?? ''); ?>" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="adresse"><?php echo $modeLivraison === 'colissimo' ? 'Adresse de livraison' : 'Boutique de retrait'; ?></label>
-                        <textarea id="adresse" name="adresse" rows="3" required><?php echo htmlspecialchars($_POST['adresse'] ?? ''); ?></textarea>
-                    </div>
+
+                    <?php if ($modeLivraison === 'colissimo'): ?>
+                        <div class="form-group">
+                            <label for="adresse_ligne1">Adresse (n° et voie)</label>
+                            <div class="address-autocomplete">
+                                <input type="text" id="adresse_ligne1" name="adresse_ligne1" autocomplete="off" placeholder="Ex : 12 rue de la République" value="<?php echo htmlspecialchars($_POST['adresse_ligne1'] ?? ''); ?>" required>
+                                <ul class="address-suggestions" id="addressSuggestions"></ul>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="adresse_ligne2">Complément d'adresse <span class="optional">(optionnel)</span></label>
+                            <input type="text" id="adresse_ligne2" name="adresse_ligne2" placeholder="Bâtiment, appartement, étage..." value="<?php echo htmlspecialchars($_POST['adresse_ligne2'] ?? ''); ?>">
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="code_postal">Code postal</label>
+                                <input type="text" id="code_postal" name="code_postal" inputmode="numeric" pattern="\d{5}" maxlength="5" value="<?php echo htmlspecialchars($_POST['code_postal'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ville">Ville</label>
+                                <input type="text" id="ville" name="ville" list="villeOptions" autocomplete="off" value="<?php echo htmlspecialchars($_POST['ville'] ?? ''); ?>" required>
+                                <datalist id="villeOptions"></datalist>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="form-group">
+                            <label for="boutique">Boutique de retrait</label>
+                            <select id="boutique" name="boutique" required>
+                                <?php foreach ($boutiques as $valeur => $libelle): ?>
+                                    <option value="<?php echo htmlspecialchars($valeur); ?>" <?php echo ($_POST['boutique'] ?? 'Pierrefeu') === $valeur ? 'selected' : ''; ?>><?php echo htmlspecialchars($libelle); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
+
                     <button type="submit" class="btn-submit">
                         <?php echo isStripeConfigured() ? 'Payer ' . number_format($total, 2, ',', ' ') . ' € par carte' : 'Payer ' . number_format($total, 2, ',', ' ') . ' € (mode simulation)'; ?>
                     </button>
@@ -507,5 +626,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'comma
         </div>
     </div>
 </main>
+
+<?php if ($modeLivraison === 'colissimo'): ?>
+<script>
+    (function () {
+        // Autocomplétion d'adresse via l'API officielle "Base Adresse Nationale"
+        // (data.gouv.fr, gratuite et sans clé) : suggère des adresses réelles et
+        // pré-remplit code postal / ville en un clic.
+        var adresseInput = document.getElementById('adresse_ligne1');
+        var suggestionsList = document.getElementById('addressSuggestions');
+        var codePostalInput = document.getElementById('code_postal');
+        var villeInput = document.getElementById('ville');
+        var villeDatalist = document.getElementById('villeOptions');
+        var debounceTimer = null;
+
+        function chargerVilles(codePostal) {
+            if (!villeDatalist || !/^\d{5}$/.test(codePostal)) return;
+            fetch('https://geo.api.gouv.fr/communes?codePostal=' + codePostal + '&fields=nom&format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (communes) {
+                    villeDatalist.innerHTML = '';
+                    (communes || []).forEach(function (c) {
+                        var opt = document.createElement('option');
+                        opt.value = c.nom;
+                        villeDatalist.appendChild(opt);
+                    });
+                })
+                .catch(function () { /* API indisponible : la ville reste saisissable librement */ });
+        }
+
+        if (adresseInput && suggestionsList) {
+            adresseInput.addEventListener('input', function () {
+                var query = adresseInput.value.trim();
+                clearTimeout(debounceTimer);
+                if (query.length < 4) {
+                    suggestionsList.innerHTML = '';
+                    suggestionsList.classList.remove('show');
+                    return;
+                }
+                debounceTimer = setTimeout(function () {
+                    fetch('https://api-adresse.data.gouv.fr/search/?q=' + encodeURIComponent(query) + '&limit=5&autocomplete=1')
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            suggestionsList.innerHTML = '';
+                            (data.features || []).forEach(function (f) {
+                                var li = document.createElement('li');
+                                li.textContent = f.properties.label;
+                                li.addEventListener('click', function () {
+                                    adresseInput.value = f.properties.name || f.properties.label;
+                                    if (codePostalInput) codePostalInput.value = f.properties.postcode || '';
+                                    if (villeInput) villeInput.value = f.properties.city || '';
+                                    suggestionsList.innerHTML = '';
+                                    suggestionsList.classList.remove('show');
+                                    chargerVilles(f.properties.postcode || '');
+                                });
+                                suggestionsList.appendChild(li);
+                            });
+                            suggestionsList.classList.toggle('show', suggestionsList.children.length > 0);
+                        })
+                        .catch(function () { /* API indisponible : la saisie manuelle reste possible */ });
+                }, 300);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (e.target !== adresseInput && !suggestionsList.contains(e.target)) {
+                    suggestionsList.classList.remove('show');
+                }
+            });
+        }
+
+        if (codePostalInput) {
+            codePostalInput.addEventListener('input', function () {
+                chargerVilles(codePostalInput.value.trim());
+            });
+            // Réaffichage du formulaire après une erreur de validation : on
+            // recharge les villes correspondant au code postal déjà saisi.
+            if (codePostalInput.value.trim()) {
+                chargerVilles(codePostalInput.value.trim());
+            }
+        }
+    })();
+</script>
+<?php endif; ?>
 
 <?php include 'footer.php'; ?>

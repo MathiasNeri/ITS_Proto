@@ -111,6 +111,7 @@ function initDatabase() {
         user_id INTEGER,
         nom TEXT NOT NULL,
         email TEXT NOT NULL,
+        telephone TEXT,
         adresse TEXT NOT NULL,
         total REAL NOT NULL,
         statut TEXT NOT NULL DEFAULT 'nouvelle',
@@ -235,6 +236,9 @@ function initDatabase() {
     // Migrations légères pour les bases créées avant l'ajout de ces colonnes
     if (!columnExists($pdo, 'rdv', 'vu')) {
         $pdo->exec("ALTER TABLE rdv ADD COLUMN vu INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!columnExists($pdo, 'commandes', 'telephone')) {
+        $pdo->exec("ALTER TABLE commandes ADD COLUMN telephone TEXT");
     }
     if (!columnExists($pdo, 'produits', 'stock')) {
         $pdo->exec("ALTER TABLE produits ADD COLUMN stock INTEGER NOT NULL DEFAULT 0");

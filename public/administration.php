@@ -685,13 +685,13 @@ $devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['st
                 <div class="table-scroll">
                 <table class="data-table">
                     <thead>
-                        <tr><th>N°</th><th>Client</th><th>Articles</th><th>Total</th><th>Livraison</th><th>N° suivi</th><th>Date</th><th>Statut</th></tr>
+                        <tr><th>N°</th><th>Client</th><th>Articles</th><th>Total</th><th>Livraison</th><th>Adresse</th><th>N° suivi</th><th>Date</th><th>Statut</th></tr>
                     </thead>
                     <tbody>
                         <?php foreach ($commandes_list as $commande): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($commande['numero']); ?><?php if (!empty($commande['code_promo'])): ?><br><span style="font-size:.68rem;color:var(--success);">Promo : <?php echo htmlspecialchars($commande['code_promo']); ?></span><?php endif; ?></td>
-                            <td><?php echo htmlspecialchars($commande['nom']); ?><br><span style="font-size:.72rem;"><?php echo htmlspecialchars($commande['email']); ?></span></td>
+                            <td><?php echo htmlspecialchars($commande['nom']); ?><br><span style="font-size:.72rem;"><?php echo htmlspecialchars($commande['email']); ?></span><?php if (!empty($commande['telephone'])): ?><br><span style="font-size:.72rem;"><?php echo htmlspecialchars($commande['telephone']); ?></span><?php endif; ?></td>
                             <td class="order-lines-cell">
                                 <?php foreach ($lignesParCommande[$commande['id']] ?? [] as $l): ?>
                                     <?php echo htmlspecialchars($l['nom_produit']); ?> × <?php echo (int) $l['quantite']; ?><br>
@@ -699,6 +699,12 @@ $devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['st
                             </td>
                             <td><?php echo number_format($commande['total'], 2, ',', ' '); ?> €</td>
                             <td><?php echo $commande['mode_livraison'] === 'colissimo' ? '📦 Colissimo' : '🏬 Boutique'; ?></td>
+                            <td style="max-width:180px;">
+                                <details>
+                                    <summary style="cursor:pointer;color:var(--accent-2);font-size:.78rem;">Voir</summary>
+                                    <div style="margin-top:.4rem;white-space:pre-wrap;font-size:.76rem;color:var(--text-muted);"><?php echo htmlspecialchars($commande['adresse']); ?></div>
+                                </details>
+                            </td>
                             <td>
                                 <?php if ($commande['mode_livraison'] === 'colissimo'): ?>
                                 <form method="POST" class="inline-form">
@@ -728,7 +734,7 @@ $devisNonTraites = count(array_filter($devis_list, function ($d) { return $d['st
                         </tr>
                         <?php endforeach; ?>
                         <?php if (empty($commandes_list)): ?>
-                            <tr><td colspan="8">Aucune commande pour le moment.</td></tr>
+                            <tr><td colspan="9">Aucune commande pour le moment.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>

@@ -59,15 +59,15 @@ function calculerFraisLivraison($modeLivraison, $sousTotal) {
  * qu'à la confirmation réelle du paiement (voir confirmerPaiementCommande),
  * pour ne jamais bloquer du stock sur une commande jamais payée.
  */
-function creerCommandeEnAttente(PDO $pdo, array $lignes, $nom, $email, $adresse, $modeLivraison, $fraisLivraison, $codePromo, $remise, $total, $userId) {
+function creerCommandeEnAttente(PDO $pdo, array $lignes, $nom, $email, $telephone, $adresse, $modeLivraison, $fraisLivraison, $codePromo, $remise, $total, $userId) {
     $numero = 'ITS-' . date('ymd') . '-' . random_int(1000, 9999);
 
     $pdo->beginTransaction();
     try {
         $stmt = $pdo->prepare('INSERT INTO commandes
-            (numero, user_id, nom, email, adresse, total, statut, mode_livraison, frais_livraison, code_promo, remise)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$numero, $userId, $nom, $email, $adresse, $total, 'en_attente_paiement', $modeLivraison, $fraisLivraison, $codePromo, $remise]);
+            (numero, user_id, nom, email, telephone, adresse, total, statut, mode_livraison, frais_livraison, code_promo, remise)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$numero, $userId, $nom, $email, $telephone, $adresse, $total, 'en_attente_paiement', $modeLivraison, $fraisLivraison, $codePromo, $remise]);
         $commandeId = (int) $pdo->lastInsertId();
 
         $stmtLigne = $pdo->prepare('INSERT INTO commande_lignes (commande_id, produit_id, nom_produit, prix_unitaire, quantite) VALUES (?, ?, ?, ?, ?)');
@@ -165,10 +165,10 @@ function envoyerEmailsCommandePayee(array $commande, array $lignes) {
 
     $contenuAdmin = '
         <p>Nouvelle commande payée : <strong>' . htmlspecialchars($commande['numero']) . '</strong></p>
-        <p>Client : ' . htmlspecialchars($commande['nom']) . ' (' . htmlspecialchars($commande['email']) . ')</p>
+        <p>Client : ' . htmlspecialchars($commande['nom']) . ' (' . htmlspecialchars($commande['email']) . ($commande['telephone'] ? ', ' . htmlspecialchars($commande['telephone']) : '') . ')</p>
         <table style="width:100%; border-collapse: collapse; margin: 16px 0;">' . $lignesHtml . '</table>
         <p><strong>Total : ' . number_format($commande['total'], 2, ',', ' ') . ' €</strong></p>
-        <p>Mode de retrait : ' . htmlspecialchars($livraisonLabel) . '</p>';
+        <p>Mode de retrait : ' . htmlspecialchars($livraisonLabel) . '<br>Adresse : ' . nl2br(htmlspecialchars($commande['adresse'])) . '</p>';
 
     sendMail('admin@its-reparation.fr', 'Nouvelle commande ' . $commande['numero'], emailTemplate('Nouvelle commande', $contenuAdmin));
 }

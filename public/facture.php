@@ -212,6 +212,7 @@ $sousTotal = array_sum(array_map(function ($l) { return $l['prix_unitaire'] * $l
                 <h3>Facturé à</h3>
                 <?php echo htmlspecialchars($commande['nom']); ?><br>
                 <?php echo htmlspecialchars($commande['email']); ?><br>
+                <?php if (!empty($commande['telephone'])): ?><?php echo htmlspecialchars($commande['telephone']); ?><br><?php endif; ?>
                 <?php echo nl2br(htmlspecialchars($commande['adresse'])); ?>
             </div>
             <div>

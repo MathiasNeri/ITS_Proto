@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS commandes (
     user_id INT NULL,
     nom VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    telephone VARCHAR(30) NULL,
     adresse TEXT NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     statut VARCHAR(30) NOT NULL DEFAULT 'nouvelle',
