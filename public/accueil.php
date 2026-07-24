@@ -10,6 +10,12 @@ $user_role = $_SESSION['user_role'] ?? '';
 
 $page_title = 'Accueil';
 $page_description = "Vente et réparation de téléphones, ordinateurs et tablettes à Pierrefeu-du-Var (83390), toutes marques. Neuf, reconditionné, occasion. Devis gratuit en ligne.";
+
+// Bandeau "à la une" : produits en promo + codes promo actifs, tous deux
+// déjà gérés depuis l'admin — rien de statique à maintenir à la main.
+$pdo = initDatabase();
+$produitsPromo = $pdo->query("SELECT id, nom, prix, prix_barre, icone, stock FROM produits WHERE tag = 'promo' AND stock > 0 ORDER BY id DESC LIMIT 6")->fetchAll(PDO::FETCH_ASSOC);
+$codesPromoActifs = $pdo->query("SELECT code, type, valeur, date_expiration FROM codes_promo WHERE actif = 1 AND (date_expiration IS NULL OR date_expiration >= date('now')) ORDER BY created_at DESC LIMIT 3")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <?php include 'header.php'; ?>
 
@@ -119,13 +125,234 @@ $page_description = "Vente et réparation de téléphones, ordinateurs et tablet
         50% { opacity: 0; }
     }
 
+    /* Bandeau promotions "à la une" */
+    .promo-banner {
+        position: relative;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        margin-bottom: 3rem;
+        box-shadow: var(--shadow-lg);
+        background: linear-gradient(120deg, #c0392b 0%, var(--accent) 45%, #e67e22 100%);
+    }
+
+    .promo-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, .06) 0 2px, transparent 2px 26px);
+        pointer-events: none;
+    }
+
+    .promo-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        position: relative;
+        margin: 1.4rem 0 0 1.6rem;
+        padding: .35rem .9rem;
+        border-radius: 20px;
+        background: rgba(0, 0, 0, .22);
+        color: #fff;
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .8px;
+        text-transform: uppercase;
+    }
+
+    .promo-track-viewport {
+        overflow: hidden;
+        position: relative;
+    }
+
+    .promo-track {
+        display: flex;
+        transition: transform .5s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .promo-slide {
+        flex: 0 0 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.8rem;
+        padding: 1.6rem 4rem 2.2rem;
+        min-height: 150px;
+        color: #fff;
+        text-align: left;
+    }
+
+    .promo-slide-icon {
+        font-size: 3.2rem;
+        flex-shrink: 0;
+        filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25));
+    }
+
+    .promo-slide-body h3 {
+        font-size: 1.4rem;
+        margin-bottom: .3rem;
+    }
+
+    .promo-slide-body p {
+        color: rgba(255, 255, 255, .85);
+        font-size: .9rem;
+        margin-bottom: .7rem;
+    }
+
+    .promo-price-row {
+        display: flex;
+        align-items: baseline;
+        gap: .7rem;
+        margin-bottom: .8rem;
+    }
+
+    .promo-price-new {
+        font-size: 1.6rem;
+        font-weight: 800;
+    }
+
+    .promo-price-old {
+        text-decoration: line-through;
+        color: rgba(255, 255, 255, .65);
+        font-size: 1rem;
+    }
+
+    .promo-price-cut {
+        background: #fff;
+        color: var(--accent);
+        font-weight: 800;
+        font-size: .72rem;
+        padding: 2px 9px;
+        border-radius: 10px;
+    }
+
+    .promo-slide-cta {
+        display: inline-block;
+        background: #fff;
+        color: var(--accent);
+        font-weight: 800;
+        padding: .65rem 1.4rem;
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        font-size: .88rem;
+        transition: transform var(--ease), box-shadow var(--ease);
+    }
+
+    .promo-slide-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .25);
+    }
+
+    .promo-code-box {
+        display: inline-flex;
+        align-items: center;
+        gap: .8rem;
+        background: rgba(0, 0, 0, .22);
+        border: 2px dashed rgba(255, 255, 255, .6);
+        border-radius: var(--radius-sm);
+        padding: .6rem .7rem .6rem 1.1rem;
+    }
+
+    .promo-code-box strong {
+        font-size: 1.3rem;
+        letter-spacing: 1.5px;
+    }
+
+    .promo-copy-btn {
+        background: #fff;
+        color: var(--accent);
+        border: none;
+        border-radius: 6px;
+        padding: .45rem .8rem;
+        font-weight: 800;
+        font-size: .76rem;
+        cursor: pointer;
+        transition: transform var(--ease);
+    }
+
+    .promo-copy-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .promo-copy-btn.copied {
+        background: var(--success);
+        color: #fff;
+    }
+
+    .promo-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0, 0, 0, .25);
+        color: #fff;
+        font-size: 1.1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color var(--ease);
+        z-index: 2;
+    }
+
+    .promo-nav:hover {
+        background: rgba(0, 0, 0, .4);
+    }
+
+    .promo-nav.prev { left: 1rem; }
+    .promo-nav.next { right: 1rem; }
+
+    .promo-dots {
+        display: flex;
+        justify-content: center;
+        gap: .5rem;
+        padding-bottom: 1.2rem;
+        position: relative;
+    }
+
+    .promo-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, .4);
+        cursor: pointer;
+        padding: 0;
+        transition: background-color var(--ease), transform var(--ease);
+    }
+
+    .promo-dot.active {
+        background: #fff;
+        transform: scale(1.3);
+    }
+
+    @media (max-width: 640px) {
+        .promo-slide {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.4rem 1.5rem 1.8rem;
+        }
+
+        .promo-price-row {
+            justify-content: center;
+        }
+
+        .promo-nav {
+            width: 32px;
+            height: 32px;
+            font-size: .95rem;
+        }
+    }
+
     /* Main Content */
     .main-content {
         padding: 4rem 2rem;
         max-width: 1200px;
         margin: 0 auto;
     }
-    
+
     .main-title {
         text-align: center;
         font-size: 1.3rem;
@@ -373,6 +600,65 @@ $page_description = "Vente et réparation de téléphones, ordinateurs et tablet
 
 <!-- Main Content -->
 <main class="main-content">
+    <?php if (!empty($produitsPromo) || !empty($codesPromoActifs)): ?>
+        <div class="promo-banner">
+            <span class="promo-eyebrow">🔥 À la une</span>
+            <div class="promo-track-viewport">
+                <div class="promo-track" id="promoTrack">
+                    <?php foreach ($codesPromoActifs as $c): ?>
+                        <div class="promo-slide">
+                            <div class="promo-slide-icon">🎁</div>
+                            <div class="promo-slide-body">
+                                <h3>
+                                    <?php echo $c['type'] === 'pourcentage' ? (int) $c['valeur'] . '% de réduction' : number_format($c['valeur'], 2, ',', ' ') . ' € de réduction'; ?>
+                                </h3>
+                                <p>
+                                    Avec le code ci-dessous, sur tout le site<?php echo !empty($c['date_expiration']) ? ' jusqu\'au ' . date('d/m/Y', strtotime($c['date_expiration'])) : ''; ?>.
+                                </p>
+                                <div class="promo-code-box">
+                                    <strong id="promoCode-<?php echo htmlspecialchars($c['code']); ?>"><?php echo htmlspecialchars($c['code']); ?></strong>
+                                    <button type="button" class="promo-copy-btn" data-code="<?php echo htmlspecialchars($c['code']); ?>">Copier</button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <?php foreach ($produitsPromo as $p):
+                        $reduction = !empty($p['prix_barre']) && $p['prix_barre'] > 0 ? round(100 - ($p['prix'] / $p['prix_barre'] * 100)) : null;
+                    ?>
+                        <div class="promo-slide">
+                            <div class="promo-slide-icon"><?php echo $p['icone']; ?></div>
+                            <div class="promo-slide-body">
+                                <h3><?php echo htmlspecialchars($p['nom']); ?></h3>
+                                <div class="promo-price-row">
+                                    <span class="promo-price-new"><?php echo number_format($p['prix'], 2, ',', ' '); ?> €</span>
+                                    <?php if (!empty($p['prix_barre'])): ?>
+                                        <span class="promo-price-old"><?php echo number_format($p['prix_barre'], 2, ',', ' '); ?> €</span>
+                                    <?php endif; ?>
+                                    <?php if ($reduction): ?>
+                                        <span class="promo-price-cut">-<?php echo $reduction; ?>%</span>
+                                    <?php endif; ?>
+                                </div>
+                                <a href="produit.php?id=<?php echo (int) $p['id']; ?>" class="promo-slide-cta">Voir l'offre</a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <?php $nbSlides = count($codesPromoActifs) + count($produitsPromo); ?>
+            <?php if ($nbSlides > 1): ?>
+                <button type="button" class="promo-nav prev" id="promoPrev" aria-label="Promotion précédente">&#8249;</button>
+                <button type="button" class="promo-nav next" id="promoNext" aria-label="Promotion suivante">&#8250;</button>
+                <div class="promo-dots" id="promoDots">
+                    <?php for ($i = 0; $i < $nbSlides; $i++): ?>
+                        <button type="button" class="promo-dot<?php echo $i === 0 ? ' active' : ''; ?>" data-index="<?php echo $i; ?>" aria-label="Aller à la promotion <?php echo $i + 1; ?>"></button>
+                    <?php endfor; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <h1 class="main-title">
         <span class="typing-line"><span id="typedWord"></span><span class="typing-caret">|</span></span><br>
         INFORMATIQUE ET TÉLÉPHONIE - TOUTES MARQUES<br>
@@ -561,6 +847,81 @@ $page_description = "Vente et réparation de téléphones, ordinateurs et tablet
             }
 
             tick();
+        })();
+    </script>
+
+    <script>
+        (function () {
+            var track = document.getElementById('promoTrack');
+            if (!track) return;
+
+            var slides = track.querySelectorAll('.promo-slide');
+            var dots = document.querySelectorAll('.promo-dot');
+            var prevBtn = document.getElementById('promoPrev');
+            var nextBtn = document.getElementById('promoNext');
+            var index = 0;
+            var timer = null;
+
+            function goTo(i) {
+                index = (i + slides.length) % slides.length;
+                track.style.transform = 'translateX(-' + (index * 100) + '%)';
+                dots.forEach(function (dot, di) { dot.classList.toggle('active', di === index); });
+            }
+
+            function autoplay() {
+                clearInterval(timer);
+                if (slides.length > 1) {
+                    timer = setInterval(function () { goTo(index + 1); }, 5000);
+                }
+            }
+
+            if (prevBtn) prevBtn.addEventListener('click', function () { goTo(index - 1); autoplay(); });
+            if (nextBtn) nextBtn.addEventListener('click', function () { goTo(index + 1); autoplay(); });
+            dots.forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    goTo(parseInt(dot.getAttribute('data-index'), 10));
+                    autoplay();
+                });
+            });
+
+            var banner = document.querySelector('.promo-banner');
+            if (banner) {
+                banner.addEventListener('mouseenter', function () { clearInterval(timer); });
+                banner.addEventListener('mouseleave', autoplay);
+            }
+
+            document.querySelectorAll('.promo-copy-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var code = btn.getAttribute('data-code');
+                    var restaurer = function () {
+                        btn.textContent = 'Copier';
+                        btn.classList.remove('copied');
+                    };
+                    var confirmerCopie = function () {
+                        btn.textContent = 'Copié !';
+                        btn.classList.add('copied');
+                        setTimeout(restaurer, 1800);
+                    };
+                    var copierViaTextarea = function () {
+                        var champ = document.createElement('textarea');
+                        champ.value = code;
+                        champ.style.position = 'fixed';
+                        champ.style.opacity = '0';
+                        document.body.appendChild(champ);
+                        champ.select();
+                        try { document.execCommand('copy'); confirmerCopie(); } catch (e) {}
+                        document.body.removeChild(champ);
+                    };
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(code).then(confirmerCopie).catch(copierViaTextarea);
+                    } else {
+                        copierViaTextarea();
+                    }
+                });
+            });
+
+            goTo(0);
+            autoplay();
         })();
     </script>
 </main>
