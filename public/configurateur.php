@@ -455,8 +455,12 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         cursor: not-allowed;
     }
 
-    .category-card.active .category-card-label,
-    .category-card.active .category-card-selection {
+    .category-card.active .category-card-label {
+        color: #fff;
+    }
+
+    .category-card.active .category-card-chosen-name,
+    .category-card.active .category-card-chosen-price {
         color: #fff;
     }
 
@@ -488,10 +492,6 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         margin-bottom: .4rem;
     }
 
-    .category-card-required.done {
-        color: var(--success);
-    }
-
     .category-choose-btn {
         background: var(--surface-deep);
         color: var(--text);
@@ -514,13 +514,128 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         color: #1c1c1c;
     }
 
-    .category-card-selection {
-        margin-top: .5rem;
-        font-size: .68rem;
+    .category-card.chosen {
+        flex-basis: 260px;
+        border-color: var(--success);
+    }
+
+    .category-card.chosen:not(.active):hover {
+        border-color: var(--success);
+    }
+
+    .category-card-unchosen {
+        display: block;
+    }
+
+    .category-card.chosen .category-card-unchosen {
+        display: none;
+    }
+
+    .category-card-chosen {
+        display: none;
+        align-items: flex-start;
+        gap: .8rem;
+        text-align: left;
+    }
+
+    .category-card.chosen .category-card-chosen {
+        display: flex;
+    }
+
+    .category-card-chosen-thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-sm);
+        background: var(--surface-deep);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .category-card-chosen-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .category-card-chosen-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .category-card-chosen-label {
+        font-size: .64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .4px;
         color: var(--success);
+        margin-bottom: .2rem;
+    }
+
+    .category-card-chosen-name {
+        font-size: .8rem;
         font-weight: bold;
-        line-height: 1.3;
-        min-height: 1.6em;
+        color: var(--text);
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .category-card-chosen-price {
+        font-size: .78rem;
+        color: var(--accent-2);
+        font-weight: bold;
+        margin: .3rem 0 .5rem;
+    }
+
+    .category-card-chosen-edit {
+        padding: .3rem .8rem;
+        font-size: .68rem;
+    }
+
+    .category-page-heading {
+        font-size: 1.5rem;
+        color: var(--text);
+        margin-bottom: 1.2rem;
+    }
+
+    .config-live-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        background: var(--surface);
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
+        padding: 1.2rem 1.6rem;
+        margin-top: 1.5rem;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--text);
+    }
+
+    .config-live-total span:last-child {
+        color: var(--accent-2);
+        font-size: 1.3rem;
+    }
+
+    .config-clear-link {
+        display: block;
+        margin: 1rem auto 0;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        text-decoration: underline;
+        font-size: .82rem;
+        cursor: pointer;
+    }
+
+    .config-clear-link:hover {
+        color: var(--accent);
     }
 
     .category-drawer-backdrop {
@@ -1078,6 +1193,24 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             flex-basis: 120px;
         }
 
+        .category-card.chosen {
+            flex-basis: 220px;
+        }
+
+        .config-live-total {
+            flex-direction: column;
+            gap: .2rem;
+            padding: 1rem 1.2rem;
+        }
+
+        .config-live-total span:last-child {
+            font-size: 1.15rem;
+        }
+
+        .category-page-heading {
+            font-size: 1.25rem;
+        }
+
         .config-contact .form-row-2 {
             grid-template-columns: 1fr;
         }
@@ -1141,23 +1274,41 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
             <!-- ÉTAPE 2 : VOTRE CONFIGURATION -->
             <div class="config-step-panel" data-step-panel="configuration">
+                <h2 class="category-page-heading" id="categoryPageHeading">Choisissez votre <?php echo htmlspecialchars(mb_strtolower($labels[$categories[0]])); ?></h2>
+
                 <div class="category-strip-wrap">
                     <button type="button" class="category-scroll-btn" id="categoryScrollLeft" aria-label="Précédent">‹</button>
                     <div class="category-strip" id="categoryStrip">
                         <?php foreach ($categories as $type): ?>
                             <div class="category-card" data-type="<?php echo $type; ?>">
-                                <?php if (in_array($type, $requis, true)): ?>
-                                    <span class="category-card-required">Obligatoire</span>
-                                <?php endif; ?>
-                                <div class="category-card-visual"><?php echo $icones[$type]; ?></div>
-                                <div class="category-card-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
-                                <button type="button" class="category-choose-btn" data-type="<?php echo $type; ?>">Je choisis</button>
-                                <div class="category-card-selection" data-type="<?php echo $type; ?>">—</div>
+                                <div class="category-card-unchosen">
+                                    <?php if (in_array($type, $requis, true)): ?>
+                                        <span class="category-card-required">Obligatoire</span>
+                                    <?php endif; ?>
+                                    <div class="category-card-visual"><?php echo $icones[$type]; ?></div>
+                                    <div class="category-card-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
+                                    <button type="button" class="category-choose-btn" data-type="<?php echo $type; ?>">Je choisis</button>
+                                </div>
+                                <div class="category-card-chosen" hidden>
+                                    <div class="category-card-chosen-thumb" data-type="<?php echo $type; ?>"></div>
+                                    <div class="category-card-chosen-info">
+                                        <div class="category-card-chosen-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
+                                        <div class="category-card-chosen-name" data-type="<?php echo $type; ?>"></div>
+                                        <div class="category-card-chosen-price" data-type="<?php echo $type; ?>"></div>
+                                        <button type="button" class="category-choose-btn category-card-chosen-edit" data-type="<?php echo $type; ?>">Modifier</button>
+                                    </div>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                     <button type="button" class="category-scroll-btn" id="categoryScrollRight" aria-label="Suivant">›</button>
                 </div>
+
+                <div class="config-live-total">
+                    <span>Total de la configuration</span>
+                    <span id="configLiveTotal">0,00 €</span>
+                </div>
+                <button type="button" class="config-clear-link" id="clearConfigLink">Tout supprimer</button>
 
                 <div class="category-drawer-backdrop" id="categoryDrawerBackdrop"></div>
                 <div class="category-drawer" id="categoryDrawer">
@@ -1341,6 +1492,8 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                 'type' => $c['type'],
                 'nom' => nomComplet($c),
                 'prix' => (float) $c['prix'],
+                'icone' => $c['icone'],
+                'image' => $c['image'],
                 'socket' => $c['socket'],
                 'ram_type' => $c['ram_type'],
                 'form_factor' => $c['form_factor'],
@@ -1428,7 +1581,10 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                 periphRow.textContent = 'Aucun';
             }
 
-            document.getElementById('summaryTotal').textContent = total.toFixed(2).replace('.', ',') + ' €';
+            var totalTxt = total.toFixed(2).replace('.', ',') + ' €';
+            document.getElementById('summaryTotal').textContent = totalTxt;
+            var liveTotal = document.getElementById('configLiveTotal');
+            if (liveTotal) liveTotal.textContent = totalTxt;
 
             var alim = getSelected('alimentation');
             var recommended = totalPower + 150;
@@ -1450,18 +1606,32 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             }
         }
 
+        function setChosenThumb(container, comp) {
+            container.innerHTML = '';
+            if (comp.image) {
+                var img = document.createElement('img');
+                img.src = 'images/composants/' + encodeURIComponent(comp.image);
+                img.alt = comp.nom;
+                container.appendChild(img);
+            } else {
+                container.textContent = comp.icone;
+            }
+        }
+
         function updateCategoryCards() {
             categories.forEach(function (type) {
                 var comp = getSelected(type);
-                var label = document.querySelector('.category-card-selection[data-type="' + type + '"]');
-                if (label) {
-                    label.textContent = comp ? (comp.nom + (comp.prix > 0 ? ' · ' + comp.prix.toFixed(2).replace('.', ',') + ' €' : ' · inclus')) : '—';
-                }
-                var requiredTag = document.querySelector('.category-card[data-type="' + type + '"] .category-card-required');
-                if (requiredTag) {
-                    requiredTag.textContent = comp ? '✓ Choisi' : 'Obligatoire';
-                    requiredTag.classList.toggle('done', !!comp);
-                }
+                var card = document.querySelector('.category-card[data-type="' + type + '"]');
+                if (!card) return;
+                card.classList.toggle('chosen', !!comp);
+                if (!comp) return;
+
+                var nameEl = card.querySelector('.category-card-chosen-name');
+                var priceEl = card.querySelector('.category-card-chosen-price');
+                var thumbEl = card.querySelector('.category-card-chosen-thumb');
+                if (nameEl) nameEl.textContent = comp.nom;
+                if (priceEl) priceEl.textContent = comp.prix > 0 ? '+' + comp.prix.toFixed(2).replace('.', ',') + ' €' : 'Inclus';
+                if (thumbEl) setChosenThumb(thumbEl, comp);
             });
         }
 
@@ -1577,9 +1747,12 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             document.querySelectorAll('.category-options-panel').forEach(function (panel) {
                 panel.classList.toggle('active', panel.dataset.typePanel === type);
             });
-            var title = document.getElementById('categoryDetailTitle');
-            if (title && labelsByType[type]) {
-                title.textContent = 'Choisissez votre ' + labelsByType[type].toLowerCase();
+            if (labelsByType[type]) {
+                var heading = 'Choisissez votre ' + labelsByType[type].toLowerCase();
+                var title = document.getElementById('categoryDetailTitle');
+                if (title) title.textContent = heading;
+                var pageHeading = document.getElementById('categoryPageHeading');
+                if (pageHeading) pageHeading.textContent = heading;
             }
             var activeCard = document.querySelector('.category-card[data-type="' + type + '"]');
             if (activeCard) {
@@ -1634,12 +1807,19 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             });
         });
 
+        function resetConfiguration() {
+            document.querySelectorAll('.option-card input[type="radio"], .option-card input[type="checkbox"]').forEach(function (i) { i.checked = false; });
+            refresh();
+        }
+
         var resetBtn = document.getElementById('resetConfig');
         if (resetBtn) {
-            resetBtn.addEventListener('click', function () {
-                document.querySelectorAll('.option-card input[type="radio"], .option-card input[type="checkbox"]').forEach(function (i) { i.checked = false; });
-                refresh();
-            });
+            resetBtn.addEventListener('click', resetConfiguration);
+        }
+
+        var clearConfigLink = document.getElementById('clearConfigLink');
+        if (clearConfigLink) {
+            clearConfigLink.addEventListener('click', resetConfiguration);
         }
 
         // Le bouton "Ajouter au panier" n'a pas besoin des coordonnées du
