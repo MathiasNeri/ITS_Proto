@@ -9,24 +9,25 @@ $user_role = $_SESSION['user_role'] ?? '';
 
 $pdo = initDatabase();
 
-$categories = ['boitier', 'cpu', 'carte_mere', 'ram', 'gpu', 'stockage', 'alimentation', 'refroidissement', 'os'];
+$categories = ['boitier', 'cpu', 'carte_mere', 'ram', 'gpu', 'ssd', 'hdd', 'alimentation', 'refroidissement', 'os'];
 $labels = [
     'boitier' => 'Boîtier',
     'cpu' => 'Processeur (CPU)',
     'carte_mere' => 'Carte mère',
     'ram' => 'Mémoire vive (RAM)',
     'gpu' => 'Carte graphique (GPU)',
-    'stockage' => 'Stockage (SSD/HDD)',
+    'ssd' => 'Disque SSD',
+    'hdd' => 'Disque dur',
     'alimentation' => 'Alimentation',
     'refroidissement' => 'Refroidissement',
     'os' => "Système d'exploitation",
 ];
 $icones = [
     'cpu' => '🧠', 'carte_mere' => '🔌', 'ram' => '🧩', 'gpu' => '🎮',
-    'stockage' => '💾', 'alimentation' => '🔋', 'boitier' => '🖥️',
+    'ssd' => '💾', 'hdd' => '💿', 'alimentation' => '🔋', 'boitier' => '🖥️',
     'refroidissement' => '❄️', 'os' => '💽',
 ];
-$requis = ['cpu', 'carte_mere', 'ram', 'stockage', 'alimentation', 'boitier'];
+$requis = ['cpu', 'carte_mere', 'ram', 'ssd', 'alimentation', 'boitier'];
 
 $composants = $pdo->query('SELECT * FROM composants_pc ORDER BY type, prix ASC')->fetchAll(PDO::FETCH_ASSOC);
 $parType = [];
@@ -40,9 +41,9 @@ function nomComplet($c) {
     return $c['marque'] === '—' ? $c['nom'] : $c['marque'] . ' ' . $c['nom'];
 }
 
-// Sélections par défaut (les options gratuites/incluses de gpu, refroidissement, os)
+// Sélections par défaut (les options gratuites/incluses de gpu, hdd, refroidissement, os)
 $defaults = [];
-foreach (['gpu', 'refroidissement', 'os'] as $type) {
+foreach (['gpu', 'hdd', 'refroidissement', 'os'] as $type) {
     foreach ($parType[$type] ?? [] as $c) {
         if ((float) $c['prix'] === 0.0) {
             $defaults[$type] = (int) $c['id'];
@@ -1825,7 +1826,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                 selectByName('carte_mere', 'ASUS TUF Gaming B650-PLUS');
                 selectByName('ram', 'Corsair Vengeance 32 Go (2x16) 6000MHz');
                 selectByName('gpu', 'NVIDIA GeForce RTX 4070 Super');
-                selectByName('stockage', 'Samsung SSD NVMe 990 Pro 1 To');
+                selectByName('ssd', 'Samsung SSD NVMe 990 Pro 1 To');
                 selectByName('alimentation', 'Corsair RM750 750W 80+ Gold');
                 selectByName('boitier', 'NZXT H5 Flow ATX Gaming');
                 selectByName('refroidissement', 'Corsair iCUE 240mm AIO');
@@ -1848,7 +1849,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                 selectByName('carte_mere', 'ASRock B450M Pro4');
                 selectByName('ram', 'Corsair Vengeance LPX 16 Go (2x8) 3200MHz');
                 selectByName('gpu', 'Sans carte graphique dédiée (iGPU)');
-                selectByName('stockage', 'Samsung SSD NVMe 980 500 Go');
+                selectByName('ssd', 'Samsung SSD NVMe 980 500 Go');
                 selectByName('alimentation', 'Corsair CV550 550W 80+ Bronze');
                 selectByName('boitier', 'Fractal Design Meshify Compact mATX');
                 selectByName('refroidissement', 'Ventirad d\'origine');

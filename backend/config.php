@@ -251,6 +251,22 @@ function initDatabase() {
     if (!columnExists($pdo, 'composants_pc', 'image')) {
         $pdo->exec("ALTER TABLE composants_pc ADD COLUMN image TEXT");
     }
+    // Sépare l'ancienne catégorie unique "stockage" en "ssd"/"hdd" (bases
+    // créées avant ce découpage) : les composants dont le nom évoque un
+    // disque dur repartent en 'hdd', tout le reste (SSD) repart en 'ssd'.
+    if ((int) $pdo->query("SELECT COUNT(*) FROM composants_pc WHERE type = 'stockage'")->fetchColumn() > 0) {
+        $pdo->exec("UPDATE composants_pc SET type = 'hdd' WHERE type = 'stockage' AND (nom LIKE '%HDD%' OR nom LIKE '%Barracuda%' OR nom LIKE '%disque dur%')");
+        $pdo->exec("UPDATE composants_pc SET type = 'ssd' WHERE type = 'stockage'");
+    }
+    // Le disque dur est optionnel : s'assurer qu'une option gratuite existe
+    // (comme gpu/refroidissement/os) pour ne pas bloquer la configuration.
+    // Ne concerne que les bases déjà peuplées (catalogue de démarrage plus
+    // bas ci-dessous, sinon, qui l'inclut déjà pour les nouvelles bases).
+    if ((int) $pdo->query("SELECT COUNT(*) FROM composants_pc WHERE type = 'hdd'")->fetchColumn() > 0
+        && (int) $pdo->query("SELECT COUNT(*) FROM composants_pc WHERE type = 'hdd' AND prix = 0")->fetchColumn() === 0) {
+        $pdo->prepare("INSERT INTO composants_pc (type, marque, nom, icone, prix, description, stock) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            ->execute(['hdd', '—', 'Sans disque dur supplémentaire', '💿', 0, 'Aucun disque dur additionnel, stockage limité au SSD choisi.', 999]);
+    }
     if (!columnExists($pdo, 'commandes', 'user_id')) {
         $pdo->exec("ALTER TABLE commandes ADD COLUMN user_id INTEGER");
     }
@@ -347,13 +363,16 @@ function initDatabase() {
             ['gpu', 'NVIDIA', 'GeForce RTX 4070 Ti Super', '🎮', 899, '16 Go VRAM, 4K confortable.', null, null, null, null, 285, '16 Go VRAM', 4],
             ['gpu', 'NVIDIA', 'GeForce RTX 4080 Super', '🎮', 1149, '16 Go VRAM, haut de gamme 4K.', null, null, null, null, 320, '16 Go VRAM', 3],
 
-            // --- Stockage ---
-            ['stockage', 'Crucial', 'SSD SATA 1 To MX500', '💾', 59, 'SSD SATA fiable, bon rapport capacité/prix.', null, null, null, null, null, '1 To', 15],
-            ['stockage', 'Samsung', 'SSD NVMe 980 500 Go', '💾', 39, 'NVMe rapide pour système d\'exploitation.', null, null, null, null, null, '500 Go', 15],
-            ['stockage', 'Samsung', 'SSD NVMe 990 Pro 1 To', '💾', 89, 'NVMe haut de gamme, très rapide.', null, null, null, null, null, '1 To', 10],
-            ['stockage', 'WD', 'SSD NVMe Black SN850X 2 To', '💾', 159, 'NVMe très haut de gamme, gaming/création.', null, null, null, null, null, '2 To', 6],
-            ['stockage', 'Seagate', 'HDD Barracuda 2 To', '💾', 54, 'Disque dur pour stockage de masse économique.', null, null, null, null, null, '2 To', 10],
-            ['stockage', 'WD', 'HDD Blue 4 To', '💾', 89, 'Disque dur grande capacité pour archivage/médias.', null, null, null, null, null, '4 To', 8],
+            // --- Disque SSD ---
+            ['ssd', 'Crucial', 'SSD SATA 1 To MX500', '💾', 59, 'SSD SATA fiable, bon rapport capacité/prix.', null, null, null, null, null, '1 To', 15],
+            ['ssd', 'Samsung', 'SSD NVMe 980 500 Go', '💾', 39, 'NVMe rapide pour système d\'exploitation.', null, null, null, null, null, '500 Go', 15],
+            ['ssd', 'Samsung', 'SSD NVMe 990 Pro 1 To', '💾', 89, 'NVMe haut de gamme, très rapide.', null, null, null, null, null, '1 To', 10],
+            ['ssd', 'WD', 'SSD NVMe Black SN850X 2 To', '💾', 159, 'NVMe très haut de gamme, gaming/création.', null, null, null, null, null, '2 To', 6],
+
+            // --- Disque dur ---
+            ['hdd', '—', 'Sans disque dur supplémentaire', '💿', 0, 'Aucun disque dur additionnel, stockage limité au SSD choisi.', null, null, null, null, null, null, 999],
+            ['hdd', 'Seagate', 'HDD Barracuda 2 To', '💿', 54, 'Disque dur pour stockage de masse économique.', null, null, null, null, null, '2 To', 10],
+            ['hdd', 'WD', 'HDD Blue 4 To', '💿', 89, 'Disque dur grande capacité pour archivage/médias.', null, null, null, null, null, '4 To', 8],
 
             // --- Alimentations ---
             ['alimentation', 'Corsair', 'CV550 550W 80+ Bronze', '🔋', 54, 'Alimentation pour configuration sans carte graphique dédiée ou d\'entrée de gamme.', null, null, null, 550, null, null, 10],
