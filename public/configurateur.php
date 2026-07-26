@@ -41,17 +41,6 @@ function nomComplet($c) {
     return $c['marque'] === '—' ? $c['nom'] : $c['marque'] . ' ' . $c['nom'];
 }
 
-// Sélections par défaut (les options gratuites/incluses de gpu, hdd, refroidissement, os)
-$defaults = [];
-foreach (['gpu', 'hdd', 'refroidissement', 'os'] as $type) {
-    foreach ($parType[$type] ?? [] as $c) {
-        if ((float) $c['prix'] === 0.0) {
-            $defaults[$type] = (int) $c['id'];
-            break;
-        }
-    }
-}
-
 $success = '';
 $error = '';
 $direction = $_POST['direction'] ?? '';
@@ -430,11 +419,6 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         color: #fff;
     }
 
-    .category-card.active .category-card-chosen-name,
-    .category-card.active .category-card-chosen-price {
-        color: #fff;
-    }
-
     .category-card-visual {
         width: 42px;
         height: 42px;
@@ -455,14 +439,6 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         min-height: 1.9em;
     }
 
-    .category-card-required {
-        color: var(--accent);
-        font-size: .62rem;
-        font-weight: bold;
-        display: block;
-        margin-bottom: .3rem;
-    }
-
     .category-choose-btn {
         background: var(--surface-deep);
         color: var(--text);
@@ -475,7 +451,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         transition: background-color var(--ease);
     }
 
-    .category-card:not(.active) .category-choose-btn:hover {
+    .category-card:not(.active):not(.chosen) .category-choose-btn:hover {
         background: var(--accent-2);
         color: #fff;
     }
@@ -486,11 +462,14 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card.chosen {
-        border-color: var(--success);
+        grid-column: span 2;
+        background: #f4f3ef;
+        border-color: #f4f3ef;
     }
 
-    .category-card.chosen:not(.active):hover {
-        border-color: var(--success);
+    .category-card.chosen:hover {
+        border-color: #fff;
+        background: #fff;
     }
 
     .category-card-unchosen {
@@ -503,10 +482,9 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
     .category-card-chosen {
         display: none;
-        flex-direction: column;
         align-items: center;
-        text-align: center;
-        width: 100%;
+        gap: .9rem;
+        text-align: left;
     }
 
     .category-card.chosen .category-card-chosen {
@@ -514,15 +492,14 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card-chosen-thumb {
-        width: 42px;
-        height: 42px;
-        margin: 0 auto .45rem;
+        width: 56px;
+        height: 56px;
         border-radius: var(--radius-sm);
-        background: var(--surface-deep);
+        background: #e4e2da;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
+        font-size: 1.7rem;
         flex-shrink: 0;
         overflow: hidden;
     }
@@ -534,41 +511,47 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card-chosen-info {
-        width: 100%;
+        flex: 1;
         min-width: 0;
     }
 
     .category-card-chosen-label {
-        font-size: .6rem;
+        font-size: .64rem;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: .3px;
-        color: var(--success);
-        margin-bottom: .3rem;
+        color: var(--accent-2);
+        margin-bottom: .2rem;
     }
 
     .category-card-chosen-name {
-        font-size: .74rem;
+        font-size: .82rem;
         font-weight: bold;
-        color: var(--text);
+        color: #1c1c1c;
         line-height: 1.25;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: 1.9em;
     }
 
     .category-card-chosen-price {
-        font-size: .72rem;
-        color: var(--accent-2);
+        font-size: .8rem;
+        color: #1c1c1c;
         font-weight: bold;
-        margin: .3rem 0 .45rem;
+        margin: .3rem 0 .55rem;
     }
 
     .category-card-chosen-edit {
-        padding: .32rem .85rem;
-        font-size: .7rem;
+        background: #1c1c1c;
+        color: #fff;
+        padding: .35rem .9rem;
+        font-size: .72rem;
+    }
+
+    .category-card-chosen-edit:hover {
+        background: #000;
+        color: #fff;
     }
 
     .category-page-heading {
@@ -1251,9 +1234,6 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     <?php foreach ($categories as $type): ?>
                         <div class="category-card" data-type="<?php echo $type; ?>">
                             <div class="category-card-unchosen">
-                                <?php if (in_array($type, $requis, true)): ?>
-                                    <span class="category-card-required">Obligatoire</span>
-                                <?php endif; ?>
                                 <div class="category-card-visual"><?php echo $icones[$type]; ?></div>
                                 <div class="category-card-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
                                 <button type="button" class="category-choose-btn" data-type="<?php echo $type; ?>">Je choisis</button>
@@ -1290,11 +1270,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                             <div class="options-grid" data-type="<?php echo $type; ?>">
                                 <?php foreach ($parType[$type] ?? [] as $c):
                                     $id = (int) $c['id'];
-                                    if ($isValidationError) {
-                                        $checked = ((int) ($_POST['comp_' . $type] ?? 0)) === $id;
-                                    } else {
-                                        $checked = isset($defaults[$type]) && $defaults[$type] === $id;
-                                    }
+                                    $checked = $isValidationError && ((int) ($_POST['comp_' . $type] ?? 0)) === $id;
                                 ?>
                                     <label class="option-card<?php echo $checked ? ' selected' : ''; ?>"
                                            data-id="<?php echo $id; ?>" data-type="<?php echo $type; ?>">
