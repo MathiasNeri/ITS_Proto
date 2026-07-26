@@ -209,38 +209,73 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         line-height: 1.6;
     }
 
-    .presets-bar {
+    .usage-panel-title {
+        font-size: 1.6rem;
+        color: var(--text);
+        margin-bottom: .6rem;
+    }
+
+    .usage-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 1.5rem;
+        max-width: 920px;
+        margin: 2rem auto 0;
+        text-align: left;
+    }
+
+    .usage-card {
+        background: var(--surface);
+        border: 2px solid var(--divider);
+        border-radius: var(--radius-md);
+        padding: 2rem 1.6rem;
+        text-align: center;
+        cursor: pointer;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease);
+    }
+
+    .usage-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-2);
+    }
+
+    .usage-card.custom {
+        border-style: dashed;
+    }
+
+    .usage-card-icon {
+        width: 68px;
+        height: 68px;
+        margin: 0 auto 1.2rem;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-wrap: wrap;
-        gap: .8rem;
-        margin-bottom: 1.5rem;
+        font-size: 2rem;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
     }
 
-    .presets-label {
-        color: var(--text-muted);
-        font-size: .85rem;
-        font-weight: bold;
+    .usage-card-icon.bureautique {
+        background: linear-gradient(135deg, var(--accent-2) 0%, var(--success) 100%);
     }
 
-    .preset-btn {
-        background: var(--surface-alt);
+    .usage-card-icon.custom {
+        background: var(--surface-deep);
+    }
+
+    .usage-card h3 {
+        font-size: 1.15rem;
         color: var(--text);
-        border: 2px solid transparent;
-        border-radius: 20px;
-        padding: .55rem 1.3rem;
-        font-size: .88rem;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: var(--shadow-sm);
-        transition: border-color var(--ease), transform var(--ease), box-shadow var(--ease);
+        margin-bottom: .6rem;
     }
 
-    .preset-btn:hover {
-        border-color: var(--accent-2);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
+    .usage-card p {
+        font-size: .82rem;
+        color: var(--text-muted);
+        line-height: 1.5;
     }
 
     .message {
@@ -346,24 +381,6 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         padding: 2rem 0;
     }
 
-    .usage-custom-btn {
-        display: inline-block;
-        margin-top: 1.5rem;
-        background: none;
-        border: 2px dashed var(--surface-alt);
-        color: var(--text-muted);
-        border-radius: var(--radius-sm);
-        padding: .8rem 1.6rem;
-        font-size: .85rem;
-        cursor: pointer;
-        transition: border-color var(--ease), color var(--ease);
-    }
-
-    .usage-custom-btn:hover {
-        border-color: var(--accent-2);
-        color: var(--text);
-    }
-
     /* --- Étape "Votre configuration" : menu de catégories --- */
     .category-strip-wrap {
         position: relative;
@@ -455,6 +472,10 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         font-weight: bold;
         display: block;
         margin-bottom: .4rem;
+    }
+
+    .category-card-required.done {
+        color: var(--success);
     }
 
     .category-choose-btn {
@@ -736,6 +757,19 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     .power-note.ok { color: var(--success); }
     .power-note.warning { color: var(--accent); font-weight: bold; }
 
+    .missing-warning {
+        background: rgba(216, 163, 22, .15);
+        border: 1px solid #d8a316;
+        color: #d8a316;
+        border-radius: var(--radius-sm);
+        padding: .7rem .9rem;
+        font-size: .8rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+
+
     .config-contact .form-group {
         margin-bottom: .8rem;
     }
@@ -879,6 +913,15 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         padding: 0 .8rem;
     }
 
+    .btn-add-cart:disabled,
+    .btn-submit-config:disabled {
+        background: var(--surface-alt) !important;
+        color: var(--text-muted) !important;
+        cursor: not-allowed;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
     @media (max-width: 900px) {
         .config-summary {
             max-width: none;
@@ -955,16 +998,28 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             <!-- ÉTAPE 1 : VOTRE UTILISATION -->
             <div class="config-step-panel<?php echo $etapeInitiale === 'usage' ? ' active' : ''; ?>" data-step-panel="usage">
                 <div class="usage-panel">
-                    <p class="page-subtitle" style="margin-bottom:0;">
-                        Pour aller plus vite, partez d'un profil prêt à l'emploi (modifiable ensuite composant par composant),
-                        ou construisez votre configuration entièrement à la carte.
+                    <h2 class="usage-panel-title">Quel est votre usage principal ?</h2>
+                    <p class="page-subtitle">
+                        Partez d'un profil prêt à l'emploi — entièrement modifiable ensuite composant par composant —
+                        ou construisez votre configuration de zéro.
                     </p>
-                    <div class="presets-bar">
-                        <span class="presets-label">Profils rapides :</span>
-                        <button type="button" class="preset-btn" id="presetGaming">🎮 Gaming</button>
-                        <button type="button" class="preset-btn" id="presetBureautique">💼 Bureautique</button>
+                    <div class="usage-cards">
+                        <div class="usage-card" id="presetGaming" role="button" tabindex="0">
+                            <div class="usage-card-icon gaming">🎮</div>
+                            <h3>Gaming</h3>
+                            <p>Ryzen 5 7600X, RTX 4070 Super, 32 Go DDR5 : une config équilibrée pour jouer en 1440p.</p>
+                        </div>
+                        <div class="usage-card" id="presetBureautique" role="button" tabindex="0">
+                            <div class="usage-card-icon bureautique">💼</div>
+                            <h3>Bureautique</h3>
+                            <p>Ryzen 5 5600, 16 Go DDR4, SSD NVMe : rapide et silencieux pour le travail au quotidien.</p>
+                        </div>
+                        <div class="usage-card custom" id="usageCustomBtn" role="button" tabindex="0">
+                            <div class="usage-card-icon custom">🛠️</div>
+                            <h3>Personnalisée</h3>
+                            <p>Je choisis chaque composant moi-même, sans partir d'un profil prédéfini.</p>
+                        </div>
                     </div>
-                    <button type="button" class="usage-custom-btn" id="usageCustomBtn">Configuration personnalisée, je choisis tout moi-même →</button>
                 </div>
             </div>
 
@@ -1094,9 +1149,11 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     </div>
                     <p class="power-note" id="powerNote"></p>
 
+                    <p class="missing-warning" id="missingWarning" hidden></p>
+
                     <button type="button" class="btn-reset-config" id="resetConfig">Réinitialiser la configuration</button>
 
-                    <button type="submit" name="direction" value="panier" class="btn-add-cart" id="addToCartBtn">🛒 Ajouter au panier</button>
+                    <button type="submit" name="direction" value="panier" class="btn-add-cart" id="addToCartBtn" disabled>🛒 Ajouter au panier</button>
                     <p class="cart-hint">Achat direct : votre configuration part au panier, vous réglez en ligne comme un produit classique.</p>
 
                     <div class="config-contact-divider"><span>ou</span></div>
@@ -1142,7 +1199,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                             <label for="consentement">J'accepte que mes données soient utilisées pour traiter ma demande de devis. *</label>
                         </div>
 
-                        <button type="submit" name="direction" value="devis" class="btn-submit-config">Demander un devis pour cette configuration</button>
+                        <button type="submit" name="direction" value="devis" class="btn-submit-config" id="devisSubmitBtn" disabled>Demander un devis pour cette configuration</button>
                     </div>
                 </div>
 
@@ -1175,6 +1232,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
         var categories = <?php echo json_encode($categories); ?>;
         var labelsByType = <?php echo json_encode($labels, JSON_UNESCAPED_UNICODE); ?>;
+        var requis = <?php echo json_encode($requis); ?>;
 
         function getSelected(type) {
             var input = document.querySelector('input[name="comp_' + type + '"]:checked');
@@ -1274,23 +1332,58 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             categories.forEach(function (type) {
                 var comp = getSelected(type);
                 var label = document.querySelector('.category-card-selection[data-type="' + type + '"]');
-                if (!label) return;
-                if (comp) {
-                    label.textContent = comp.nom + (comp.prix > 0 ? ' · ' + comp.prix.toFixed(2).replace('.', ',') + ' €' : ' · inclus');
-                } else {
-                    label.textContent = '—';
+                if (label) {
+                    label.textContent = comp ? (comp.nom + (comp.prix > 0 ? ' · ' + comp.prix.toFixed(2).replace('.', ',') + ' €' : ' · inclus')) : '—';
+                }
+                var requiredTag = document.querySelector('.category-card[data-type="' + type + '"] .category-card-required');
+                if (requiredTag) {
+                    requiredTag.textContent = comp ? '✓ Choisi' : 'Obligatoire';
+                    requiredTag.classList.toggle('done', !!comp);
                 }
             });
+        }
+
+        function getMissingRequis() {
+            return requis.filter(function (type) { return !getSelected(type); });
+        }
+
+        function updateValidationGate() {
+            var missing = getMissingRequis();
+            var addBtn = document.getElementById('addToCartBtn');
+            var devisBtn = document.getElementById('devisSubmitBtn');
+            var warning = document.getElementById('missingWarning');
+            if (addBtn) addBtn.disabled = missing.length > 0;
+            if (devisBtn) devisBtn.disabled = missing.length > 0;
+            if (warning) {
+                if (missing.length > 0) {
+                    var noms = missing.map(function (type) { return labelsByType[type]; });
+                    warning.textContent = '⚠️ Il vous reste à choisir : ' + noms.join(', ') + '.';
+                    warning.hidden = false;
+                } else {
+                    warning.hidden = true;
+                }
+            }
         }
 
         function refresh() {
             updateCompatibility();
             updateSummary();
             updateCategoryCards();
+            updateValidationGate();
             document.querySelectorAll('.option-card').forEach(function (card) {
                 card.classList.toggle('selected', card.querySelector('input').checked);
             });
         }
+
+        // Rend les cartes cliquables (div[role="button"]) utilisables au clavier.
+        document.querySelectorAll('[role="button"][tabindex]').forEach(function (el) {
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    el.click();
+                }
+            });
+        });
 
         // --- Navigation par étapes (Votre utilisation / configuration / options / validation) ---
         function goToStep(step) {
