@@ -294,7 +294,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         border-radius: 999px;
         overflow: hidden;
         box-shadow: var(--shadow-sm);
-        margin-bottom: 2rem;
+        margin-bottom: 1.4rem;
     }
 
     .config-step {
@@ -342,7 +342,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         display: flex;
         justify-content: space-between;
         gap: 1rem;
-        margin-top: 1.5rem;
+        margin-top: 1rem;
     }
 
     .config-step-nav.single {
@@ -381,51 +381,22 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         padding: 2rem 0;
     }
 
-    /* --- Étape "Votre configuration" : menu de catégories --- */
-    .category-strip-wrap {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-        margin-bottom: 1.8rem;
-    }
-
-    .category-scroll-btn {
-        flex-shrink: 0;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: none;
-        background: var(--surface-alt);
-        color: var(--text);
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: background-color var(--ease);
-    }
-
-    .category-scroll-btn:hover {
-        background: var(--surface-deep);
-    }
-
+    /* --- Étape "Votre configuration" : menu de catégories ---
+       Grille qui s'enroule (pas de défilement horizontal) : toutes les
+       catégories tiennent à l'écran, comme sur les configurateurs du marché. */
     .category-strip {
         display: flex;
-        gap: 1rem;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        padding: .3rem;
-        scrollbar-width: none;
-    }
-
-    .category-strip::-webkit-scrollbar {
-        display: none;
+        flex-wrap: wrap;
+        gap: .8rem;
+        margin-bottom: 1.2rem;
     }
 
     .category-card {
-        flex: 0 0 150px;
+        flex: 0 0 132px;
         background: var(--surface-alt);
         border: 2px solid transparent;
         border-radius: var(--radius-md);
-        padding: 1rem .8rem;
+        padding: .7rem .6rem;
         text-align: center;
         cursor: pointer;
         transition: border-color var(--ease), transform var(--ease), background-color var(--ease);
@@ -465,31 +436,31 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card-visual {
-        width: 56px;
-        height: 56px;
-        margin: 0 auto .6rem;
+        width: 42px;
+        height: 42px;
+        margin: 0 auto .45rem;
         border-radius: var(--radius-sm);
         background: var(--surface-deep);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
+        font-size: 1.4rem;
     }
 
     .category-card-label {
         font-weight: bold;
-        font-size: .82rem;
+        font-size: .76rem;
         color: var(--text);
-        margin-bottom: .5rem;
-        min-height: 2.1em;
+        margin-bottom: .4rem;
+        min-height: 1.9em;
     }
 
     .category-card-required {
         color: var(--accent);
-        font-size: .68rem;
+        font-size: .62rem;
         font-weight: bold;
         display: block;
-        margin-bottom: .4rem;
+        margin-bottom: .3rem;
     }
 
     .category-choose-btn {
@@ -497,8 +468,8 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         color: var(--text);
         border: none;
         border-radius: 20px;
-        padding: .4rem 1rem;
-        font-size: .75rem;
+        padding: .32rem .85rem;
+        font-size: .7rem;
         font-weight: bold;
         cursor: pointer;
         transition: background-color var(--ease);
@@ -515,7 +486,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card.chosen {
-        flex-basis: 260px;
+        flex-basis: 220px;
         border-color: var(--success);
     }
 
@@ -534,7 +505,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     .category-card-chosen {
         display: none;
         align-items: flex-start;
-        gap: .8rem;
+        gap: .6rem;
         text-align: left;
     }
 
@@ -543,14 +514,14 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card-chosen-thumb {
-        width: 56px;
-        height: 56px;
+        width: 44px;
+        height: 44px;
         border-radius: var(--radius-sm);
         background: var(--surface-deep);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.6rem;
+        font-size: 1.3rem;
         flex-shrink: 0;
         overflow: hidden;
     }
@@ -599,9 +570,9 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-page-heading {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         color: var(--text);
-        margin-bottom: 1.2rem;
+        margin-bottom: .8rem;
     }
 
     .config-live-total {
@@ -611,9 +582,9 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         background: var(--surface);
         border: 1px solid var(--divider);
         border-radius: var(--radius-md);
-        padding: 1.2rem 1.6rem;
-        margin-top: 1.5rem;
-        font-size: 1.1rem;
+        padding: .8rem 1.4rem;
+        margin-top: .2rem;
+        font-size: 1rem;
         font-weight: bold;
         color: var(--text);
     }
@@ -625,12 +596,12 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
     .config-clear-link {
         display: block;
-        margin: 1rem auto 0;
+        margin: .6rem auto 0;
         background: none;
         border: none;
         color: var(--text-muted);
         text-decoration: underline;
-        font-size: .82rem;
+        font-size: .78rem;
         cursor: pointer;
     }
 
@@ -1219,12 +1190,14 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
 <main class="main-content">
     <div class="page-container">
-        <h1 class="page-title">🖥️ CONFIGURATEUR PC SUR MESURE</h1>
-        <p class="page-subtitle">
-            Assemblez votre PC composant par composant : le configurateur ne vous montre que les pièces compatibles
-            entre elles (socket, mémoire, format de boîtier). Une fois prête, ajoutez votre configuration au panier
-            pour l'acheter directement, ou demandez un devis pour être recontacté par notre équipe.
-        </p>
+        <div id="pageIntro">
+            <h1 class="page-title">🖥️ CONFIGURATEUR PC SUR MESURE</h1>
+            <p class="page-subtitle">
+                Assemblez votre PC composant par composant : le configurateur ne vous montre que les pièces compatibles
+                entre elles (socket, mémoire, format de boîtier). Une fois prête, ajoutez votre configuration au panier
+                pour l'acheter directement, ou demandez un devis pour être recontacté par notre équipe.
+            </p>
+        </div>
 
         <?php if ($success): ?>
             <div class="message success"><?php echo htmlspecialchars($success); ?></div>
@@ -1276,32 +1249,28 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             <div class="config-step-panel" data-step-panel="configuration">
                 <h2 class="category-page-heading" id="categoryPageHeading">Choisissez votre <?php echo htmlspecialchars(mb_strtolower($labels[$categories[0]])); ?></h2>
 
-                <div class="category-strip-wrap">
-                    <button type="button" class="category-scroll-btn" id="categoryScrollLeft" aria-label="Précédent">‹</button>
-                    <div class="category-strip" id="categoryStrip">
-                        <?php foreach ($categories as $type): ?>
-                            <div class="category-card" data-type="<?php echo $type; ?>">
-                                <div class="category-card-unchosen">
-                                    <?php if (in_array($type, $requis, true)): ?>
-                                        <span class="category-card-required">Obligatoire</span>
-                                    <?php endif; ?>
-                                    <div class="category-card-visual"><?php echo $icones[$type]; ?></div>
-                                    <div class="category-card-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
-                                    <button type="button" class="category-choose-btn" data-type="<?php echo $type; ?>">Je choisis</button>
-                                </div>
-                                <div class="category-card-chosen" hidden>
-                                    <div class="category-card-chosen-thumb" data-type="<?php echo $type; ?>"></div>
-                                    <div class="category-card-chosen-info">
-                                        <div class="category-card-chosen-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
-                                        <div class="category-card-chosen-name" data-type="<?php echo $type; ?>"></div>
-                                        <div class="category-card-chosen-price" data-type="<?php echo $type; ?>"></div>
-                                        <button type="button" class="category-choose-btn category-card-chosen-edit" data-type="<?php echo $type; ?>">Modifier</button>
-                                    </div>
+                <div class="category-strip" id="categoryStrip">
+                    <?php foreach ($categories as $type): ?>
+                        <div class="category-card" data-type="<?php echo $type; ?>">
+                            <div class="category-card-unchosen">
+                                <?php if (in_array($type, $requis, true)): ?>
+                                    <span class="category-card-required">Obligatoire</span>
+                                <?php endif; ?>
+                                <div class="category-card-visual"><?php echo $icones[$type]; ?></div>
+                                <div class="category-card-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
+                                <button type="button" class="category-choose-btn" data-type="<?php echo $type; ?>">Je choisis</button>
+                            </div>
+                            <div class="category-card-chosen" hidden>
+                                <div class="category-card-chosen-thumb" data-type="<?php echo $type; ?>"></div>
+                                <div class="category-card-chosen-info">
+                                    <div class="category-card-chosen-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
+                                    <div class="category-card-chosen-name" data-type="<?php echo $type; ?>"></div>
+                                    <div class="category-card-chosen-price" data-type="<?php echo $type; ?>"></div>
+                                    <button type="button" class="category-choose-btn category-card-chosen-edit" data-type="<?php echo $type; ?>">Modifier</button>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <button type="button" class="category-scroll-btn" id="categoryScrollRight" aria-label="Suivant">›</button>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
 
                 <div class="config-live-total">
@@ -1720,9 +1689,14 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             document.querySelectorAll('.config-step-panel').forEach(function (panel) {
                 panel.classList.toggle('active', panel.dataset.stepPanel === step);
             });
+            // Le gros titre + texte d'intro ne servent qu'à l'étape 1 : les
+            // masquer ensuite laisse plus de place à la grille de catégories,
+            // qui tient alors sur un seul écran sans défilement.
+            var intro = document.getElementById('pageIntro');
+            if (intro) intro.hidden = step !== 'usage';
             var steps = document.getElementById('configSteps');
             if (steps) {
-                window.scrollTo({ top: steps.getBoundingClientRect().top + window.scrollY - 20, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
@@ -1783,16 +1757,6 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         if (categoryDrawerBack) categoryDrawerBack.addEventListener('click', closeCategoryDrawer);
         var categoryDrawerBackdrop = document.getElementById('categoryDrawerBackdrop');
         if (categoryDrawerBackdrop) categoryDrawerBackdrop.addEventListener('click', closeCategoryDrawer);
-
-        var categoryStrip = document.getElementById('categoryStrip');
-        var categoryScrollLeft = document.getElementById('categoryScrollLeft');
-        var categoryScrollRight = document.getElementById('categoryScrollRight');
-        if (categoryScrollLeft && categoryStrip) {
-            categoryScrollLeft.addEventListener('click', function () { categoryStrip.scrollBy({ left: -300, behavior: 'smooth' }); });
-        }
-        if (categoryScrollRight && categoryStrip) {
-            categoryScrollRight.addEventListener('click', function () { categoryStrip.scrollBy({ left: 300, behavior: 'smooth' }); });
-        }
 
         document.querySelectorAll('.option-card input[type="radio"], .option-card input[type="checkbox"]').forEach(function (input) {
             input.addEventListener('change', function () {
