@@ -1583,7 +1583,10 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             }
             var activeCard = document.querySelector('.category-card[data-type="' + type + '"]');
             if (activeCard) {
-                activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                // 'nearest' ne bouge le strip que si la carte n'est pas déjà visible,
+                // au lieu de la recentrer à chaque fois (ce qui poussait les choix déjà
+                // faits, comme le boîtier, hors champ sur la gauche).
+                activeCard.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
             }
 
             var drawer = document.getElementById('categoryDrawer');
