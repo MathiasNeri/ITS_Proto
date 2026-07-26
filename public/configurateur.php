@@ -372,12 +372,13 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     /* --- Étape "Votre configuration" : menu de catégories ---
-       Grille qui s'enroule (pas de défilement horizontal) : toutes les
-       catégories tiennent à l'écran, comme sur les configurateurs du marché. */
+       Grille à colonnes fixes (5 par ligne en desktop, comme la référence)
+       plutôt qu'un remplissage automatique : le nombre de tuiles par ligne
+       reste constant et équilibré quelle que soit la largeur disponible. */
     .category-strip {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-        gap: .8rem;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
         margin-bottom: 1.2rem;
     }
 
@@ -385,7 +386,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         background: var(--surface-alt);
         border: 2px solid transparent;
         border-radius: var(--radius-md);
-        padding: .7rem .6rem;
+        padding: 1.2rem .9rem;
         text-align: center;
         cursor: pointer;
         transition: border-color var(--ease), transform var(--ease), background-color var(--ease);
@@ -420,23 +421,23 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card-visual {
-        width: 42px;
-        height: 42px;
-        margin: 0 auto .45rem;
+        width: 52px;
+        height: 52px;
+        margin: 0 auto .6rem;
         border-radius: var(--radius-sm);
         background: var(--surface-deep);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
+        font-size: 1.6rem;
     }
 
     .category-card-label {
         font-weight: bold;
-        font-size: .76rem;
+        font-size: .84rem;
         color: var(--text);
-        margin-bottom: .4rem;
-        min-height: 1.9em;
+        margin-bottom: .6rem;
+        min-height: 2.1em;
     }
 
     .category-choose-btn {
@@ -444,8 +445,8 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         color: var(--text);
         border: none;
         border-radius: 20px;
-        padding: .32rem .85rem;
-        font-size: .7rem;
+        padding: .4rem 1.1rem;
+        font-size: .76rem;
         font-weight: bold;
         cursor: pointer;
         transition: background-color var(--ease);
@@ -581,7 +582,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
     .config-clear-link {
         display: block;
-        margin: .6rem auto 0;
+        margin: 1.3rem auto 1.3rem;
         background: none;
         border: none;
         color: var(--text-muted);
@@ -1110,6 +1111,10 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         .config-summary {
             max-width: none;
         }
+
+        .category-strip {
+            grid-template-columns: repeat(3, 1fr);
+        }
     }
 
     @media (max-width: 640px) {
@@ -1146,7 +1151,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         }
 
         .category-strip {
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
         }
 
         .config-live-total {
@@ -1251,11 +1256,12 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     <?php endforeach; ?>
                 </div>
 
+                <button type="button" class="config-clear-link" id="clearConfigLink">Tout supprimer</button>
+
                 <div class="config-live-total">
                     <span>Total de la configuration</span>
                     <span id="configLiveTotal">0,00 €</span>
                 </div>
-                <button type="button" class="config-clear-link" id="clearConfigLink">Tout supprimer</button>
 
                 <div class="category-drawer-backdrop" id="categoryDrawerBackdrop"></div>
                 <div class="category-drawer" id="categoryDrawer">
