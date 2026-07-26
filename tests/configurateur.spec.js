@@ -18,10 +18,13 @@ test.describe('Configurateur PC', () => {
 
     test('choisir un CPU masque les cartes mères incompatibles', async ({ page }) => {
         await page.goto('/configurateur.php');
+        await page.click('#usageCustomBtn');
+        await page.click('.category-card[data-type="cpu"] .category-choose-btn');
         const cpuCard = page.locator('.option-card[data-type="cpu"]', { hasText: 'Ryzen 5 7600X' });
         await cpuCard.click();
         await page.waitForTimeout(200);
 
+        await page.click('.category-card[data-type="carte_mere"] .category-choose-btn');
         const visibleMobos = await page.locator('.option-card[data-type="carte_mere"]:visible').count();
         const hiddenMobos = await page.locator('.option-card[data-type="carte_mere"].hidden-incompatible').count();
         expect(visibleMobos).toBeGreaterThan(0);
