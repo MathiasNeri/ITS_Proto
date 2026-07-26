@@ -441,6 +441,20 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         border-color: #1c1c1c;
     }
 
+    .category-card.locked {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    .category-card.locked:hover {
+        transform: none;
+        border-color: transparent;
+    }
+
+    .category-card.locked .category-choose-btn {
+        cursor: not-allowed;
+    }
+
     .category-card.active .category-card-label,
     .category-card.active .category-card-selection {
         color: #fff;
@@ -1372,10 +1386,41 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             if (devisBtn) devisBtn.disabled = !isComplete;
         }
 
+        // --- Verrouillage séquentiel : on ne peut choisir une catégorie
+        // obligatoire que si la précédente catégorie obligatoire (dans
+        // l'ordre du menu) a déjà une sélection. Les catégories optionnelles
+        // (gpu, refroidissement, os) ont toutes un choix gratuit par défaut
+        // et restent donc toujours accessibles, sans bloquer la suite. ---
+        function previousRequiredIndex(idx) {
+            for (var i = idx - 1; i >= 0; i--) {
+                if (requis.indexOf(categories[i]) !== -1) return i;
+            }
+            return -1;
+        }
+
+        function isCategoryUnlocked(type) {
+            if (requis.indexOf(type) === -1) return true;
+            var prevIdx = previousRequiredIndex(categories.indexOf(type));
+            if (prevIdx === -1) return true;
+            return !!getSelected(categories[prevIdx]);
+        }
+
+        function updateCategoryLocks() {
+            categories.forEach(function (type) {
+                var card = document.querySelector('.category-card[data-type="' + type + '"]');
+                if (!card) return;
+                var unlocked = isCategoryUnlocked(type);
+                card.classList.toggle('locked', !unlocked);
+                var btn = card.querySelector('.category-choose-btn');
+                if (btn) btn.disabled = !unlocked;
+            });
+        }
+
         function refresh() {
             updateCompatibility();
             updateSummary();
             updateCategoryCards();
+            updateCategoryLocks();
             updateValidationGate();
             document.querySelectorAll('.option-card').forEach(function (card) {
                 card.classList.toggle('selected', card.querySelector('input').checked);
@@ -1419,6 +1464,8 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
         // --- Menu de catégories (étape "Votre configuration") ---
         function goToCategory(type) {
+            if (!isCategoryUnlocked(type)) return;
+
             document.querySelectorAll('.category-card').forEach(function (card) {
                 card.classList.toggle('active', card.dataset.type === type);
             });
@@ -1429,11 +1476,27 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             if (title && labelsByType[type]) {
                 title.textContent = 'Choisissez votre ' + labelsByType[type].toLowerCase();
             }
+            var activeCard = document.querySelector('.category-card[data-type="' + type + '"]');
+            if (activeCard) {
+                activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
         }
 
         document.querySelectorAll('.category-choose-btn, .category-card').forEach(function (el) {
             el.addEventListener('click', function () { goToCategory(el.dataset.type); });
         });
+
+        // Une fois un composant choisi, ouvre automatiquement la catégorie
+        // suivante dans l'ordre (seulement en avançant, jamais quand on
+        // revient modifier un choix déjà fait plus loin dans la liste).
+        function advanceToNextCategory(type) {
+            var idx = categories.indexOf(type);
+            if (idx === -1 || idx === categories.length - 1) return;
+            var nextType = categories[idx + 1];
+            if (!getSelected(nextType)) {
+                goToCategory(nextType);
+            }
+        }
 
         var categoryStrip = document.getElementById('categoryStrip');
         var categoryScrollLeft = document.getElementById('categoryScrollLeft');
@@ -1446,7 +1509,14 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         }
 
         document.querySelectorAll('.option-card input[type="radio"], .option-card input[type="checkbox"]').forEach(function (input) {
-            input.addEventListener('change', refresh);
+            input.addEventListener('change', function () {
+                refresh();
+                var card = input.closest('.option-card');
+                var type = card ? card.dataset.type : null;
+                if (input.type === 'radio' && type && categories.indexOf(type) !== -1) {
+                    advanceToNextCategory(type);
+                }
+            });
         });
 
         var resetBtn = document.getElementById('resetConfig');

@@ -19,6 +19,10 @@ test.describe('Configurateur PC', () => {
     test('choisir un CPU masque les cartes mères incompatibles', async ({ page }) => {
         await page.goto('/configurateur.php');
         await page.click('#usageCustomBtn');
+        // Le boîtier doit être choisi en premier : le CPU reste verrouillé
+        // (grisé, "Je choisis" désactivé) tant que la catégorie précédente
+        // dans l'ordre obligatoire n'a pas de sélection.
+        await page.locator('.option-card[data-type="boitier"]').first().click();
         await page.click('.category-card[data-type="cpu"] .category-choose-btn');
         const cpuCard = page.locator('.option-card[data-type="cpu"]', { hasText: 'Ryzen 5 7600X' });
         await cpuCard.click();
