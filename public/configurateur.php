@@ -914,7 +914,8 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .btn-add-cart:disabled,
-    .btn-submit-config:disabled {
+    .btn-submit-config:disabled,
+    .btn-step:disabled {
         background: var(--surface-alt) !important;
         color: var(--text-muted) !important;
         cursor: not-allowed;
@@ -1093,9 +1094,11 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     <?php endforeach; ?>
                 </div>
 
+                <p class="missing-warning" id="configMissingWarning" hidden></p>
+
                 <div class="config-step-nav">
                     <button type="button" class="btn-step" data-goto="usage">← Précédent</button>
-                    <button type="button" class="btn-step primary" data-goto="options">Suivant →</button>
+                    <button type="button" class="btn-step primary" data-goto="options" id="configNextBtn" disabled>Suivant →</button>
                 </div>
             </div>
 
@@ -1349,20 +1352,24 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
         function updateValidationGate() {
             var missing = getMissingRequis();
-            var addBtn = document.getElementById('addToCartBtn');
-            var devisBtn = document.getElementById('devisSubmitBtn');
-            var warning = document.getElementById('missingWarning');
-            if (addBtn) addBtn.disabled = missing.length > 0;
-            if (devisBtn) devisBtn.disabled = missing.length > 0;
-            if (warning) {
-                if (missing.length > 0) {
-                    var noms = missing.map(function (type) { return labelsByType[type]; });
-                    warning.textContent = '⚠️ Il vous reste à choisir : ' + noms.join(', ') + '.';
-                    warning.hidden = false;
-                } else {
-                    warning.hidden = true;
+            var isComplete = missing.length === 0;
+            var message = isComplete ? '' : ('⚠️ Il vous reste à choisir : ' + missing.map(function (type) { return labelsByType[type]; }).join(', ') + '.');
+
+            [
+                ['configNextBtn', 'configMissingWarning'],
+                ['addToCartBtn', 'missingWarning'],
+            ].forEach(function (pair) {
+                var btn = document.getElementById(pair[0]);
+                var warning = document.getElementById(pair[1]);
+                if (btn) btn.disabled = !isComplete;
+                if (warning) {
+                    warning.textContent = message;
+                    warning.hidden = isComplete;
                 }
-            }
+            });
+
+            var devisBtn = document.getElementById('devisSubmitBtn');
+            if (devisBtn) devisBtn.disabled = !isComplete;
         }
 
         function refresh() {
