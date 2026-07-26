@@ -386,14 +386,13 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
        Grille qui s'enroule (pas de défilement horizontal) : toutes les
        catégories tiennent à l'écran, comme sur les configurateurs du marché. */
     .category-strip {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
         gap: .8rem;
         margin-bottom: 1.2rem;
     }
 
     .category-card {
-        flex: 0 0 132px;
         background: var(--surface-alt);
         border: 2px solid transparent;
         border-radius: var(--radius-md);
@@ -487,7 +486,6 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card.chosen {
-        flex-basis: 220px;
         border-color: var(--success);
     }
 
@@ -505,9 +503,10 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
 
     .category-card-chosen {
         display: none;
-        align-items: flex-start;
-        gap: .6rem;
-        text-align: left;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
     }
 
     .category-card.chosen .category-card-chosen {
@@ -515,14 +514,15 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card-chosen-thumb {
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
+        margin: 0 auto .45rem;
         border-radius: var(--radius-sm);
         background: var(--surface-deep);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3rem;
+        font-size: 1.4rem;
         flex-shrink: 0;
         overflow: hidden;
     }
@@ -534,21 +534,21 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     .category-card-chosen-info {
-        flex: 1;
+        width: 100%;
         min-width: 0;
     }
 
     .category-card-chosen-label {
-        font-size: .64rem;
+        font-size: .6rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: .4px;
+        letter-spacing: .3px;
         color: var(--success);
-        margin-bottom: .2rem;
+        margin-bottom: .3rem;
     }
 
     .category-card-chosen-name {
-        font-size: .8rem;
+        font-size: .74rem;
         font-weight: bold;
         color: var(--text);
         line-height: 1.25;
@@ -556,18 +556,19 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        min-height: 1.9em;
     }
 
     .category-card-chosen-price {
-        font-size: .78rem;
+        font-size: .72rem;
         color: var(--accent-2);
         font-weight: bold;
-        margin: .3rem 0 .5rem;
+        margin: .3rem 0 .45rem;
     }
 
     .category-card-chosen-edit {
-        padding: .3rem .8rem;
-        font-size: .68rem;
+        padding: .32rem .85rem;
+        font-size: .7rem;
     }
 
     .category-page-heading {
@@ -1161,12 +1162,8 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             grid-template-columns: 1fr;
         }
 
-        .category-card {
-            flex-basis: 120px;
-        }
-
-        .category-card.chosen {
-            flex-basis: 220px;
+        .category-strip {
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         }
 
         .config-live-total {
