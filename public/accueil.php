@@ -14,7 +14,7 @@ $page_description = "Vente et réparation de téléphones, ordinateurs et tablet
 // Bandeau "à la une" : produits en promo + codes promo actifs, tous deux
 // déjà gérés depuis l'admin — rien de statique à maintenir à la main.
 $pdo = initDatabase();
-$produitsPromo = $pdo->query("SELECT id, nom, prix, prix_barre, icone, stock FROM produits WHERE tag = 'promo' AND stock > 0 ORDER BY id DESC LIMIT 6")->fetchAll(PDO::FETCH_ASSOC);
+$produitsPromo = $pdo->query("SELECT id, nom, prix, prix_barre, icone, image, stock FROM produits WHERE tag = 'promo' AND stock > 0 ORDER BY id DESC LIMIT 6")->fetchAll(PDO::FETCH_ASSOC);
 $codesPromoActifs = $pdo->query("SELECT code, type, valeur, date_expiration FROM codes_promo WHERE actif = 1 AND (date_expiration IS NULL OR date_expiration >= date('now')) ORDER BY created_at DESC LIMIT 3")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <?php include 'header.php'; ?>
@@ -185,6 +185,14 @@ $codesPromoActifs = $pdo->query("SELECT code, type, valeur, date_expiration FROM
         font-size: 3.2rem;
         flex-shrink: 0;
         filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25));
+    }
+
+    .promo-slide-img {
+        width: 4.5rem;
+        height: 4.5rem;
+        object-fit: cover;
+        border-radius: var(--radius-sm);
+        box-shadow: 0 6px 10px rgba(0, 0, 0, .25);
     }
 
     .promo-slide-body h3 {
@@ -627,7 +635,7 @@ $codesPromoActifs = $pdo->query("SELECT code, type, valeur, date_expiration FROM
                         $reduction = !empty($p['prix_barre']) && $p['prix_barre'] > 0 ? round(100 - ($p['prix'] / $p['prix_barre'] * 100)) : null;
                     ?>
                         <div class="promo-slide">
-                            <div class="promo-slide-icon"><?php echo $p['icone']; ?></div>
+                            <div class="promo-slide-icon"><?php echo visuelHtml($p, 'produits', $p['nom'], 'promo-slide-img'); ?></div>
                             <div class="promo-slide-body">
                                 <h3><?php echo htmlspecialchars($p['nom']); ?></h3>
                                 <div class="promo-price-row">

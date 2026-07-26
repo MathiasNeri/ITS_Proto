@@ -111,6 +111,13 @@ $page_noindex = true;
         justify-content: center;
         font-size: 26px;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .cart-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .cart-info {
@@ -329,7 +336,7 @@ $page_noindex = true;
             <?php else: ?>
                 <?php foreach ($lignes as $ligne): ?>
                     <div class="cart-row">
-                        <div class="cart-thumb"><?php echo $ligne['produit']['icone']; ?></div>
+                        <div class="cart-thumb"><?php echo visuelHtml($ligne['produit'], 'produits', $ligne['produit']['nom'], 'cart-thumb-img'); ?></div>
                         <div class="cart-info">
                             <div class="cn"><?php echo htmlspecialchars($ligne['produit']['nom']); ?></div>
                             <?php if (!empty($ligne['custom'])): ?>

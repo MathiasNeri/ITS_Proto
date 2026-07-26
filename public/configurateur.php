@@ -9,15 +9,15 @@ $user_role = $_SESSION['user_role'] ?? '';
 
 $pdo = initDatabase();
 
-$categories = ['cpu', 'carte_mere', 'ram', 'gpu', 'stockage', 'alimentation', 'boitier', 'refroidissement', 'os'];
+$categories = ['boitier', 'cpu', 'carte_mere', 'ram', 'gpu', 'stockage', 'alimentation', 'refroidissement', 'os'];
 $labels = [
+    'boitier' => 'Boîtier',
     'cpu' => 'Processeur (CPU)',
     'carte_mere' => 'Carte mère',
     'ram' => 'Mémoire vive (RAM)',
     'gpu' => 'Carte graphique (GPU)',
-    'stockage' => 'Stockage',
+    'stockage' => 'Stockage (SSD/HDD)',
     'alimentation' => 'Alimentation',
-    'boitier' => 'Boîtier',
     'refroidissement' => 'Refroidissement',
     'os' => "Système d'exploitation",
 ];
@@ -180,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($direction, ['devis', 'pan
 
 $isValidationError = ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '');
 $checkedPeripheriqueIds = $isValidationError ? array_map('intval', (array) ($_POST['comp_peripherique'] ?? [])) : [];
+$etapeInitiale = $isValidationError ? 'validation' : 'usage';
 
 $page_title = 'Configurateur PC';
 $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, composants garantis compatibles, prix en temps réel. Devis ou achat en ligne.";
@@ -252,24 +253,270 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     .message.success { background: var(--success); color: #fff; }
     .message.error { background: var(--accent); color: #fff; }
 
-    .configurateur-layout {
-        display: grid;
-        grid-template-columns: 1fr 340px;
-        gap: 2rem;
-        align-items: start;
+    /* --- Étapes (Votre utilisation / configuration / options / validation) --- */
+    .config-steps {
+        display: flex;
+        border-radius: 999px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem;
     }
 
-    .configurateur-layout > * {
-        min-width: 0;
+    .config-step {
+        flex: 1;
+        background: var(--surface-alt);
+        color: var(--text-muted);
+        border: none;
+        padding: .9rem .6rem;
+        font-size: .85rem;
+        font-weight: bold;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color var(--ease), color var(--ease);
+        border-right: 1px solid var(--surface-deep);
     }
 
-    .config-section {
+    .config-step:last-child {
+        border-right: none;
+    }
+
+    .config-step:hover {
+        background: var(--surface-deep);
+        color: var(--text);
+    }
+
+    .config-step.active {
+        background: #1c1c1c;
+        color: #fff;
+    }
+
+    .config-step-num {
+        opacity: .7;
+        margin-right: .3rem;
+    }
+
+    .config-step-panel {
+        display: none;
+    }
+
+    .config-step-panel.active {
+        display: block;
+    }
+
+    .config-step-nav {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .config-step-nav.single {
+        justify-content: flex-end;
+    }
+
+    .btn-step {
+        background: var(--surface-alt);
+        color: var(--text);
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: .75rem 1.5rem;
+        font-weight: bold;
+        font-size: .9rem;
+        cursor: pointer;
+        transition: background-color var(--ease), transform var(--ease);
+    }
+
+    .btn-step:hover {
+        background: var(--surface-deep);
+        transform: translateY(-1px);
+    }
+
+    .btn-step.primary {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .btn-step.primary:hover {
+        background: var(--accent-hover);
+    }
+
+    /* --- Étape "Votre utilisation" --- */
+    .usage-panel {
+        text-align: center;
+        padding: 2rem 0;
+    }
+
+    .usage-custom-btn {
+        display: inline-block;
+        margin-top: 1.5rem;
+        background: none;
+        border: 2px dashed var(--surface-alt);
+        color: var(--text-muted);
+        border-radius: var(--radius-sm);
+        padding: .8rem 1.6rem;
+        font-size: .85rem;
+        cursor: pointer;
+        transition: border-color var(--ease), color var(--ease);
+    }
+
+    .usage-custom-btn:hover {
+        border-color: var(--accent-2);
+        color: var(--text);
+    }
+
+    /* --- Étape "Votre configuration" : menu de catégories --- */
+    .category-strip-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: 1.8rem;
+    }
+
+    .category-scroll-btn {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: var(--surface-alt);
+        color: var(--text);
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color var(--ease);
+    }
+
+    .category-scroll-btn:hover {
+        background: var(--surface-deep);
+    }
+
+    .category-strip {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        padding: .3rem;
+        scrollbar-width: none;
+    }
+
+    .category-strip::-webkit-scrollbar {
+        display: none;
+    }
+
+    .category-card {
+        flex: 0 0 150px;
+        background: var(--surface-alt);
+        border: 2px solid transparent;
+        border-radius: var(--radius-md);
+        padding: 1rem .8rem;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color var(--ease), transform var(--ease), background-color var(--ease);
+    }
+
+    .category-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-2);
+    }
+
+    .category-card.active {
+        background: #1c1c1c;
+        border-color: #1c1c1c;
+    }
+
+    .category-card.active .category-card-label,
+    .category-card.active .category-card-selection {
+        color: #fff;
+    }
+
+    .category-card-visual {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto .6rem;
+        border-radius: var(--radius-sm);
+        background: var(--surface-deep);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+
+    .category-card-label {
+        font-weight: bold;
+        font-size: .82rem;
+        color: var(--text);
+        margin-bottom: .5rem;
+        min-height: 2.1em;
+    }
+
+    .category-card-required {
+        color: var(--accent);
+        font-size: .68rem;
+        font-weight: bold;
+        display: block;
+        margin-bottom: .4rem;
+    }
+
+    .category-choose-btn {
+        background: var(--surface-deep);
+        color: var(--text);
+        border: none;
+        border-radius: 20px;
+        padding: .4rem 1rem;
+        font-size: .75rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color var(--ease);
+    }
+
+    .category-card:not(.active) .category-choose-btn:hover {
+        background: var(--accent-2);
+        color: #fff;
+    }
+
+    .category-card.active .category-choose-btn {
+        background: #fff;
+        color: #1c1c1c;
+    }
+
+    .category-card-selection {
+        margin-top: .5rem;
+        font-size: .68rem;
+        color: var(--success);
+        font-weight: bold;
+        line-height: 1.3;
+        min-height: 1.6em;
+    }
+
+    .category-detail {
         background: var(--surface);
         border: 1px solid var(--divider);
         border-radius: var(--radius-md);
         padding: 1.6rem;
-        margin-bottom: 1.5rem;
         box-shadow: var(--shadow-sm);
+    }
+
+    .category-detail-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .category-detail-back {
+        background: var(--surface-alt);
+        border: none;
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        padding: .5rem .9rem;
+        font-size: .8rem;
+        font-weight: bold;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .category-detail-back:hover {
+        background: var(--surface-deep);
     }
 
     .config-section-title {
@@ -278,7 +525,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         gap: .6rem;
         color: var(--accent);
         font-size: 1.2rem;
-        margin-bottom: 1.1rem;
+        margin: 0;
     }
 
     .config-section-hint {
@@ -286,6 +533,23 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         color: var(--text-muted);
         font-weight: normal;
         margin-left: .3rem;
+    }
+
+    .category-options-panel {
+        display: none;
+    }
+
+    .category-options-panel.active {
+        display: block;
+    }
+
+    /* --- Étape "Vos options" (périphériques) --- */
+    .config-section {
+        background: var(--surface);
+        border: 1px solid var(--divider);
+        border-radius: var(--radius-md);
+        padding: 1.6rem;
+        box-shadow: var(--shadow-sm);
     }
 
     .options-grid {
@@ -373,6 +637,14 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         font-size: 1.6rem;
     }
 
+    .option-thumb-img {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+        border-radius: var(--radius-sm);
+        flex-shrink: 0;
+    }
+
     .option-name {
         font-weight: bold;
         color: var(--text);
@@ -412,9 +684,9 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         border: 1px solid var(--divider);
         border-radius: var(--radius-md);
         padding: 1.5rem;
-        position: sticky;
-        top: 128px;
         box-shadow: var(--shadow-md);
+        max-width: 560px;
+        margin: 0 auto;
     }
 
     .config-summary h3 {
@@ -608,12 +880,20 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
     }
 
     @media (max-width: 900px) {
-        .configurateur-layout {
-            grid-template-columns: 1fr;
+        .config-summary {
+            max-width: none;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .config-step {
+            font-size: 0;
+            padding: .9rem .3rem;
         }
 
-        .config-summary {
-            position: static;
+        .config-step-num {
+            font-size: .95rem;
+            margin-right: 0;
         }
     }
 
@@ -626,12 +906,17 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             font-size: 1.6rem;
         }
 
-        .config-section {
+        .config-section,
+        .category-detail {
             padding: 1rem;
         }
 
         .options-grid {
             grid-template-columns: 1fr;
+        }
+
+        .category-card {
+            flex-basis: 120px;
         }
 
         .config-contact .form-row-2 {
@@ -656,25 +941,60 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             <div class="message error"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
-        <div class="presets-bar">
-            <span class="presets-label">Profils rapides :</span>
-            <button type="button" class="preset-btn" id="presetGaming">🎮 Gaming</button>
-            <button type="button" class="preset-btn" id="presetBureautique">💼 Bureautique</button>
+        <div class="config-steps" id="configSteps">
+            <button type="button" class="config-step<?php echo $etapeInitiale === 'usage' ? ' active' : ''; ?>" data-step="usage"><span class="config-step-num">1.</span> Votre utilisation</button>
+            <button type="button" class="config-step" data-step="configuration"><span class="config-step-num">2.</span> Votre configuration</button>
+            <button type="button" class="config-step" data-step="options"><span class="config-step-num">3.</span> Vos options</button>
+            <button type="button" class="config-step<?php echo $etapeInitiale === 'validation' ? ' active' : ''; ?>" data-step="validation"><span class="config-step-num">4.</span> Votre validation</button>
         </div>
 
         <form method="POST" id="configForm">
             <?php echo csrfField(); ?>
             <?php echo honeypotField(); ?>
-            <div class="configurateur-layout">
-                <div>
-                    <?php foreach ($categories as $type): ?>
-                        <div class="config-section">
-                            <h2 class="config-section-title">
-                                <?php echo $icones[$type]; ?> <?php echo htmlspecialchars($labels[$type]); ?>
+
+            <!-- ÉTAPE 1 : VOTRE UTILISATION -->
+            <div class="config-step-panel<?php echo $etapeInitiale === 'usage' ? ' active' : ''; ?>" data-step-panel="usage">
+                <div class="usage-panel">
+                    <p class="page-subtitle" style="margin-bottom:0;">
+                        Pour aller plus vite, partez d'un profil prêt à l'emploi (modifiable ensuite composant par composant),
+                        ou construisez votre configuration entièrement à la carte.
+                    </p>
+                    <div class="presets-bar">
+                        <span class="presets-label">Profils rapides :</span>
+                        <button type="button" class="preset-btn" id="presetGaming">🎮 Gaming</button>
+                        <button type="button" class="preset-btn" id="presetBureautique">💼 Bureautique</button>
+                    </div>
+                    <button type="button" class="usage-custom-btn" id="usageCustomBtn">Configuration personnalisée, je choisis tout moi-même →</button>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 2 : VOTRE CONFIGURATION -->
+            <div class="config-step-panel" data-step-panel="configuration">
+                <div class="category-strip-wrap">
+                    <button type="button" class="category-scroll-btn" id="categoryScrollLeft" aria-label="Précédent">‹</button>
+                    <div class="category-strip" id="categoryStrip">
+                        <?php foreach ($categories as $type): ?>
+                            <div class="category-card<?php echo $type === $categories[0] ? ' active' : ''; ?>" data-type="<?php echo $type; ?>">
                                 <?php if (in_array($type, $requis, true)): ?>
-                                    <span class="config-section-hint">(obligatoire)</span>
+                                    <span class="category-card-required">Obligatoire</span>
                                 <?php endif; ?>
-                            </h2>
+                                <div class="category-card-visual"><?php echo $icones[$type]; ?></div>
+                                <div class="category-card-label"><?php echo htmlspecialchars($labels[$type]); ?></div>
+                                <button type="button" class="category-choose-btn" data-type="<?php echo $type; ?>">Je choisis</button>
+                                <div class="category-card-selection" data-type="<?php echo $type; ?>">—</div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <button type="button" class="category-scroll-btn" id="categoryScrollRight" aria-label="Suivant">›</button>
+                </div>
+
+                <div class="category-detail">
+                    <div class="category-detail-header">
+                        <h2 class="config-section-title" id="categoryDetailTitle">Choisissez votre <?php echo htmlspecialchars(mb_strtolower($labels[$categories[0]])); ?></h2>
+                    </div>
+
+                    <?php foreach ($categories as $type): ?>
+                        <div class="category-options-panel<?php echo $type === $categories[0] ? ' active' : ''; ?>" data-type-panel="<?php echo $type; ?>">
                             <div class="options-grid" data-type="<?php echo $type; ?>">
                                 <?php foreach ($parType[$type] ?? [] as $c):
                                     $id = (int) $c['id'];
@@ -687,7 +1007,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                                     <label class="option-card<?php echo $checked ? ' selected' : ''; ?>"
                                            data-id="<?php echo $id; ?>" data-type="<?php echo $type; ?>">
                                         <input type="radio" name="comp_<?php echo $type; ?>" value="<?php echo $id; ?>" <?php echo $checked ? 'checked' : ''; ?>>
-                                        <span class="option-icon"><?php echo $c['icone']; ?></span>
+                                        <?php echo visuelHtml($c, 'composants', nomComplet($c), 'option-thumb-img'); ?>
                                         <span class="option-name"><?php echo htmlspecialchars(nomComplet($c)); ?></span>
                                         <span class="option-specs">
                                             <?php if ($c['socket'] && in_array($type, ['cpu', 'carte_mere'], true)): ?>
@@ -716,30 +1036,46 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                             </div>
                         </div>
                     <?php endforeach; ?>
+                </div>
 
-                    <div class="config-section">
-                        <h2 class="config-section-title">
-                            🖱️ Périphériques
-                            <span class="config-section-hint">(optionnel, plusieurs choix possibles)</span>
-                        </h2>
-                        <div class="options-grid" data-type="peripherique">
-                            <?php foreach ($parType['peripherique'] ?? [] as $c):
-                                $id = (int) $c['id'];
-                                $checked = in_array($id, $checkedPeripheriqueIds, true);
-                            ?>
-                                <label class="option-card<?php echo $checked ? ' selected' : ''; ?>"
-                                       data-id="<?php echo $id; ?>" data-type="peripherique">
-                                    <input type="checkbox" class="peripherique-check" name="comp_peripherique[]" value="<?php echo $id; ?>" <?php echo $checked ? 'checked' : ''; ?>>
-                                    <span class="option-icon"><?php echo $c['icone']; ?></span>
-                                    <span class="option-name"><?php echo htmlspecialchars(nomComplet($c)); ?></span>
-                                    <span class="option-desc"><?php echo htmlspecialchars($c['description']); ?></span>
-                                    <span class="option-price"><?php echo number_format($c['prix'], 2, ',', ' '); ?> €</span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
+                <div class="config-step-nav">
+                    <button type="button" class="btn-step" data-goto="usage">← Précédent</button>
+                    <button type="button" class="btn-step primary" data-goto="options">Suivant →</button>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 3 : VOS OPTIONS (périphériques) -->
+            <div class="config-step-panel" data-step-panel="options">
+                <div class="config-section">
+                    <h2 class="config-section-title">
+                        🖱️ Périphériques
+                        <span class="config-section-hint">(optionnel, plusieurs choix possibles)</span>
+                    </h2>
+                    <div class="options-grid" data-type="peripherique">
+                        <?php foreach ($parType['peripherique'] ?? [] as $c):
+                            $id = (int) $c['id'];
+                            $checked = in_array($id, $checkedPeripheriqueIds, true);
+                        ?>
+                            <label class="option-card<?php echo $checked ? ' selected' : ''; ?>"
+                                   data-id="<?php echo $id; ?>" data-type="peripherique">
+                                <input type="checkbox" class="peripherique-check" name="comp_peripherique[]" value="<?php echo $id; ?>" <?php echo $checked ? 'checked' : ''; ?>>
+                                <?php echo visuelHtml($c, 'composants', nomComplet($c), 'option-thumb-img'); ?>
+                                <span class="option-name"><?php echo htmlspecialchars(nomComplet($c)); ?></span>
+                                <span class="option-desc"><?php echo htmlspecialchars($c['description']); ?></span>
+                                <span class="option-price"><?php echo number_format($c['prix'], 2, ',', ' '); ?> €</span>
+                            </label>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
+                <div class="config-step-nav">
+                    <button type="button" class="btn-step" data-goto="configuration">← Précédent</button>
+                    <button type="button" class="btn-step primary" data-goto="validation">Suivant →</button>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 4 : VOTRE VALIDATION -->
+            <div class="config-step-panel<?php echo $etapeInitiale === 'validation' ? ' active' : ''; ?>" data-step-panel="validation">
                 <div class="config-summary">
                     <h3>Votre configuration</h3>
                     <?php foreach ($categories as $type): ?>
@@ -809,6 +1145,10 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                         <button type="submit" name="direction" value="devis" class="btn-submit-config">Demander un devis pour cette configuration</button>
                     </div>
                 </div>
+
+                <div class="config-step-nav single">
+                    <button type="button" class="btn-step" data-goto="options">← Précédent</button>
+                </div>
             </div>
         </form>
     </div>
@@ -834,6 +1174,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         catalog.forEach(function (c) { byId[c.id] = c; });
 
         var categories = <?php echo json_encode($categories); ?>;
+        var labelsByType = <?php echo json_encode($labels, JSON_UNESCAPED_UNICODE); ?>;
 
         function getSelected(type) {
             var input = document.querySelector('input[name="comp_' + type + '"]:checked');
@@ -929,12 +1270,79 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             }
         }
 
+        function updateCategoryCards() {
+            categories.forEach(function (type) {
+                var comp = getSelected(type);
+                var label = document.querySelector('.category-card-selection[data-type="' + type + '"]');
+                if (!label) return;
+                if (comp) {
+                    label.textContent = comp.nom + (comp.prix > 0 ? ' · ' + comp.prix.toFixed(2).replace('.', ',') + ' €' : ' · inclus');
+                } else {
+                    label.textContent = '—';
+                }
+            });
+        }
+
         function refresh() {
             updateCompatibility();
             updateSummary();
+            updateCategoryCards();
             document.querySelectorAll('.option-card').forEach(function (card) {
                 card.classList.toggle('selected', card.querySelector('input').checked);
             });
+        }
+
+        // --- Navigation par étapes (Votre utilisation / configuration / options / validation) ---
+        function goToStep(step) {
+            document.querySelectorAll('.config-step').forEach(function (btn) {
+                btn.classList.toggle('active', btn.dataset.step === step);
+            });
+            document.querySelectorAll('.config-step-panel').forEach(function (panel) {
+                panel.classList.toggle('active', panel.dataset.stepPanel === step);
+            });
+            var steps = document.getElementById('configSteps');
+            if (steps) {
+                window.scrollTo({ top: steps.getBoundingClientRect().top + window.scrollY - 20, behavior: 'smooth' });
+            }
+        }
+
+        document.querySelectorAll('.config-step').forEach(function (btn) {
+            btn.addEventListener('click', function () { goToStep(btn.dataset.step); });
+        });
+        document.querySelectorAll('[data-goto]').forEach(function (btn) {
+            btn.addEventListener('click', function () { goToStep(btn.dataset.goto); });
+        });
+        var usageCustomBtn = document.getElementById('usageCustomBtn');
+        if (usageCustomBtn) {
+            usageCustomBtn.addEventListener('click', function () { goToStep('configuration'); });
+        }
+
+        // --- Menu de catégories (étape "Votre configuration") ---
+        function goToCategory(type) {
+            document.querySelectorAll('.category-card').forEach(function (card) {
+                card.classList.toggle('active', card.dataset.type === type);
+            });
+            document.querySelectorAll('.category-options-panel').forEach(function (panel) {
+                panel.classList.toggle('active', panel.dataset.typePanel === type);
+            });
+            var title = document.getElementById('categoryDetailTitle');
+            if (title && labelsByType[type]) {
+                title.textContent = 'Choisissez votre ' + labelsByType[type].toLowerCase();
+            }
+        }
+
+        document.querySelectorAll('.category-choose-btn, .category-card').forEach(function (el) {
+            el.addEventListener('click', function () { goToCategory(el.dataset.type); });
+        });
+
+        var categoryStrip = document.getElementById('categoryStrip');
+        var categoryScrollLeft = document.getElementById('categoryScrollLeft');
+        var categoryScrollRight = document.getElementById('categoryScrollRight');
+        if (categoryScrollLeft && categoryStrip) {
+            categoryScrollLeft.addEventListener('click', function () { categoryStrip.scrollBy({ left: -300, behavior: 'smooth' }); });
+        }
+        if (categoryScrollRight && categoryStrip) {
+            categoryScrollRight.addEventListener('click', function () { categoryStrip.scrollBy({ left: 300, behavior: 'smooth' }); });
         }
 
         document.querySelectorAll('.option-card input[type="radio"], .option-card input[type="checkbox"]').forEach(function (input) {
@@ -1000,6 +1408,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     'HyperX Casque gaming avec micro'
                 ]);
                 refresh();
+                goToStep('validation');
             });
         }
 
@@ -1020,6 +1429,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     'Logitech Pack clavier + souris bureautique'
                 ]);
                 refresh();
+                goToStep('validation');
             });
         }
 

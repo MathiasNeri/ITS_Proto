@@ -97,6 +97,7 @@ function initDatabase() {
         nom TEXT NOT NULL,
         categorie TEXT NOT NULL,
         icone TEXT NOT NULL DEFAULT '📦',
+        image TEXT,
         prix REAL NOT NULL,
         prix_barre REAL,
         tag TEXT NOT NULL DEFAULT 'neuf',
@@ -221,6 +222,7 @@ function initDatabase() {
         marque TEXT NOT NULL,
         nom TEXT NOT NULL,
         icone TEXT NOT NULL DEFAULT '🔧',
+        image TEXT,
         prix REAL NOT NULL,
         description TEXT NOT NULL DEFAULT '',
         socket TEXT,
@@ -242,6 +244,12 @@ function initDatabase() {
     }
     if (!columnExists($pdo, 'produits', 'stock')) {
         $pdo->exec("ALTER TABLE produits ADD COLUMN stock INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!columnExists($pdo, 'produits', 'image')) {
+        $pdo->exec("ALTER TABLE produits ADD COLUMN image TEXT");
+    }
+    if (!columnExists($pdo, 'composants_pc', 'image')) {
+        $pdo->exec("ALTER TABLE composants_pc ADD COLUMN image TEXT");
     }
     if (!columnExists($pdo, 'commandes', 'user_id')) {
         $pdo->exec("ALTER TABLE commandes ADD COLUMN user_id INTEGER");
@@ -572,6 +580,7 @@ require_once __DIR__ . '/stripe.php';
 require_once __DIR__ . '/commandes.php';
 require_once __DIR__ . '/devis.php';
 require_once __DIR__ . '/backup.php';
+require_once __DIR__ . '/images.php';
 
 // La base doit exister dès le chargement de la config (ex: profil.php
 // ouvre une connexion directe sans repasser par initDatabase()).

@@ -123,6 +123,14 @@ if ($produit) {
         align-items: center;
         justify-content: center;
         font-size: 110px;
+        overflow: hidden;
+    }
+
+    .product-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: var(--radius-md);
     }
 
     .product-tag {
@@ -449,7 +457,7 @@ if ($produit) {
             <div class="product-grid">
                 <div class="product-media">
                     <span class="product-tag <?php echo htmlspecialchars($produit['tag']); ?>"><?php echo $tagLabels[$produit['tag']] ?? $produit['tag']; ?></span>
-                    <?php echo $produit['icone']; ?>
+                    <?php echo visuelHtml($produit, 'produits', $produit['nom'], 'product-thumb-img'); ?>
                 </div>
                 <div>
                     <div class="product-cat"><?php echo $categories[$produit['categorie']] ?? $produit['categorie']; ?></div>

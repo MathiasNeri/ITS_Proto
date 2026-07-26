@@ -247,6 +247,12 @@ $page_description = "Téléphones, ordinateurs, tablettes, pièces détachées e
         height: 100%;
     }
 
+    .shop-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
     .shop-name a {
         color: inherit;
         text-decoration: none;
@@ -322,7 +328,7 @@ $page_description = "Téléphones, ordinateurs, tablettes, pièces détachées e
                      data-price="<?php echo (float) $p['prix']; ?>">
                     <div class="shop-media">
                         <span class="shop-tag <?php echo htmlspecialchars($p['tag']); ?>"><?php echo $tagLabels[$p['tag']] ?? $p['tag']; ?></span>
-                        <a href="produit.php?id=<?php echo (int) $p['id']; ?>"><?php echo $p['icone']; ?></a>
+                        <a href="produit.php?id=<?php echo (int) $p['id']; ?>"><?php echo visuelHtml($p, 'produits', $p['nom'], 'shop-thumb-img'); ?></a>
                     </div>
                     <div class="shop-body">
                         <div class="shop-cat"><?php echo $categories[$p['categorie']]['label'] ?? $p['categorie']; ?></div>

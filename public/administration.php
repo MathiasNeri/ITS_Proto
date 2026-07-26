@@ -26,6 +26,18 @@ $tags = [
     'occasion' => 'Occasion',
     'promo'    => 'Promo',
 ];
+$composantsTypes = [
+    'boitier'          => 'Boîtier',
+    'cpu'              => 'Processeur (CPU)',
+    'carte_mere'       => 'Carte mère',
+    'ram'              => 'Mémoire vive (RAM)',
+    'gpu'              => 'Carte graphique (GPU)',
+    'stockage'         => 'Stockage (SSD/HDD)',
+    'alimentation'     => 'Alimentation',
+    'refroidissement'  => 'Refroidissement',
+    'os'               => "Système d'exploitation",
+    'peripherique'     => 'Périphérique',
+];
 $statuts = [
     'en_attente_paiement' => 'En attente de paiement',
     'nouvelle'            => 'Nouvelle (payée)',
@@ -106,12 +118,18 @@ if ($_POST) {
                 if ($nom === '' || !array_key_exists($categorie, $categories) || $prix <= 0) {
                     $error = 'Merci de remplir correctement le nom, la catégorie et le prix du produit';
                 } else {
-                    $pdo->prepare('INSERT INTO produits (nom, categorie, icone, prix, prix_barre, tag, etoiles, description, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                        ->execute([$nom, $categorie, $icone, $prix, $prixBarre, $tag, $etoiles, $description, $stock]);
-                    $message = 'Produit ajouté au catalogue';
+                    $upload = traiterUploadImage($_FILES['image'] ?? null, 'produits');
+                    if ($upload['erreur']) {
+                        $error = $upload['erreur'];
+                    } else {
+                        $pdo->prepare('INSERT INTO produits (nom, categorie, icone, image, prix, prix_barre, tag, etoiles, description, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                            ->execute([$nom, $categorie, $icone, $upload['fichier'], $prix, $prixBarre, $tag, $etoiles, $description, $stock]);
+                        $message = 'Produit ajouté au catalogue';
+                    }
                 }
             } elseif ($action === 'edit_produit' && isset($_POST['produit_id'])) {
                 $nom = trim($_POST['nom'] ?? '');
+                $icone = trim($_POST['icone'] ?? '📦') ?: '📦';
                 $prix = (float) ($_POST['prix'] ?? 0);
                 $prixBarre = trim($_POST['prix_barre'] ?? '') !== '' ? (float) $_POST['prix_barre'] : null;
                 $tag = $_POST['tag'] ?? 'neuf';
@@ -120,13 +138,102 @@ if ($_POST) {
                 if ($nom === '' || $prix <= 0) {
                     $error = 'Nom et prix invalides';
                 } else {
-                    $pdo->prepare('UPDATE produits SET nom = ?, prix = ?, prix_barre = ?, tag = ?, stock = ? WHERE id = ?')
-                        ->execute([$nom, $prix, $prixBarre, $tag, $stock, $_POST['produit_id']]);
-                    $message = 'Produit mis à jour';
+                    $stmt = $pdo->prepare('SELECT image FROM produits WHERE id = ?');
+                    $stmt->execute([$_POST['produit_id']]);
+                    $ancienneImage = $stmt->fetchColumn();
+
+                    $upload = traiterUploadImage($_FILES['image'] ?? null, 'produits');
+                    if ($upload['erreur']) {
+                        $error = $upload['erreur'];
+                    } else {
+                        $supprimerImageExistante = isset($_POST['supprimer_image']);
+                        $nouvelleImage = $upload['fichier'] ?? ($supprimerImageExistante ? null : $ancienneImage);
+
+                        if ($upload['fichier'] || $supprimerImageExistante) {
+                            supprimerImage('produits', $ancienneImage);
+                        }
+
+                        $pdo->prepare('UPDATE produits SET nom = ?, icone = ?, image = ?, prix = ?, prix_barre = ?, tag = ?, stock = ? WHERE id = ?')
+                            ->execute([$nom, $icone, $nouvelleImage, $prix, $prixBarre, $tag, $stock, $_POST['produit_id']]);
+                        $message = 'Produit mis à jour';
+                    }
                 }
             } elseif ($action === 'delete_produit' && isset($_POST['produit_id'])) {
+                $stmt = $pdo->prepare('SELECT image FROM produits WHERE id = ?');
+                $stmt->execute([$_POST['produit_id']]);
+                supprimerImage('produits', $stmt->fetchColumn());
                 $pdo->prepare('DELETE FROM produits WHERE id = ?')->execute([$_POST['produit_id']]);
                 $message = 'Produit supprimé';
+            } elseif ($action === 'add_composant') {
+                $type = $_POST['type'] ?? '';
+                $marque = trim($_POST['marque'] ?? '');
+                $nom = trim($_POST['nom'] ?? '');
+                $icone = trim($_POST['icone'] ?? '🔧') ?: '🔧';
+                $prix = (float) ($_POST['prix'] ?? 0);
+                $description = trim($_POST['description'] ?? '');
+                $socket = trim($_POST['socket'] ?? '') ?: null;
+                $ramType = trim($_POST['ram_type'] ?? '') ?: null;
+                $formFactor = trim($_POST['form_factor'] ?? '') ?: null;
+                $wattage = trim($_POST['wattage'] ?? '') !== '' ? (int) $_POST['wattage'] : null;
+                $powerDraw = trim($_POST['power_draw'] ?? '') !== '' ? (int) $_POST['power_draw'] : null;
+                $capacite = trim($_POST['capacite'] ?? '') ?: null;
+                $stock = max(0, (int) ($_POST['stock'] ?? 0));
+
+                if ($nom === '' || $marque === '' || !array_key_exists($type, $composantsTypes) || $prix < 0) {
+                    $error = 'Merci de remplir correctement le type, la marque, le nom et le prix du composant';
+                } else {
+                    $upload = traiterUploadImage($_FILES['image'] ?? null, 'composants');
+                    if ($upload['erreur']) {
+                        $error = $upload['erreur'];
+                    } else {
+                        $pdo->prepare('INSERT INTO composants_pc (type, marque, nom, icone, image, prix, description, socket, ram_type, form_factor, wattage, power_draw, capacite, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                            ->execute([$type, $marque, $nom, $icone, $upload['fichier'], $prix, $description, $socket, $ramType, $formFactor, $wattage, $powerDraw, $capacite, $stock]);
+                        $message = 'Composant ajouté au configurateur';
+                    }
+                }
+            } elseif ($action === 'edit_composant' && isset($_POST['composant_id'])) {
+                $marque = trim($_POST['marque'] ?? '');
+                $nom = trim($_POST['nom'] ?? '');
+                $icone = trim($_POST['icone'] ?? '🔧') ?: '🔧';
+                $prix = (float) ($_POST['prix'] ?? 0);
+                $description = trim($_POST['description'] ?? '');
+                $socket = trim($_POST['socket'] ?? '') ?: null;
+                $ramType = trim($_POST['ram_type'] ?? '') ?: null;
+                $formFactor = trim($_POST['form_factor'] ?? '') ?: null;
+                $wattage = trim($_POST['wattage'] ?? '') !== '' ? (int) $_POST['wattage'] : null;
+                $powerDraw = trim($_POST['power_draw'] ?? '') !== '' ? (int) $_POST['power_draw'] : null;
+                $capacite = trim($_POST['capacite'] ?? '') ?: null;
+                $stock = max(0, (int) ($_POST['stock'] ?? 0));
+
+                if ($nom === '' || $marque === '' || $prix < 0) {
+                    $error = 'Marque, nom et prix invalides';
+                } else {
+                    $stmt = $pdo->prepare('SELECT image FROM composants_pc WHERE id = ?');
+                    $stmt->execute([$_POST['composant_id']]);
+                    $ancienneImage = $stmt->fetchColumn();
+
+                    $upload = traiterUploadImage($_FILES['image'] ?? null, 'composants');
+                    if ($upload['erreur']) {
+                        $error = $upload['erreur'];
+                    } else {
+                        $supprimerImageExistante = isset($_POST['supprimer_image']);
+                        $nouvelleImage = $upload['fichier'] ?? ($supprimerImageExistante ? null : $ancienneImage);
+
+                        if ($upload['fichier'] || $supprimerImageExistante) {
+                            supprimerImage('composants', $ancienneImage);
+                        }
+
+                        $pdo->prepare('UPDATE composants_pc SET marque = ?, nom = ?, icone = ?, image = ?, prix = ?, description = ?, socket = ?, ram_type = ?, form_factor = ?, wattage = ?, power_draw = ?, capacite = ?, stock = ? WHERE id = ?')
+                            ->execute([$marque, $nom, $icone, $nouvelleImage, $prix, $description, $socket, $ramType, $formFactor, $wattage, $powerDraw, $capacite, $stock, $_POST['composant_id']]);
+                        $message = 'Composant mis à jour';
+                    }
+                }
+            } elseif ($action === 'delete_composant' && isset($_POST['composant_id'])) {
+                $stmt = $pdo->prepare('SELECT image FROM composants_pc WHERE id = ?');
+                $stmt->execute([$_POST['composant_id']]);
+                supprimerImage('composants', $stmt->fetchColumn());
+                $pdo->prepare('DELETE FROM composants_pc WHERE id = ?')->execute([$_POST['composant_id']]);
+                $message = 'Composant supprimé';
             } elseif ($action === 'delete_message' && isset($_POST['message_id'])) {
                 $pdo->prepare('DELETE FROM messages WHERE id = ?')->execute([$_POST['message_id']]);
                 $message = 'Message supprimé';
@@ -168,6 +275,7 @@ try {
     $devis_list = $pdo->query('SELECT * FROM devis ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
     $users_list = $pdo->query('SELECT * FROM users ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
     $produits_list = $pdo->query('SELECT * FROM produits ORDER BY id DESC')->fetchAll(PDO::FETCH_ASSOC);
+    $composants_list = $pdo->query('SELECT * FROM composants_pc ORDER BY type, id DESC')->fetchAll(PDO::FETCH_ASSOC);
     $commandes_list = $pdo->query('SELECT * FROM commandes ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
     $messages_list = $pdo->query('SELECT * FROM messages ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
     $emails_list = $pdo->query('SELECT * FROM emails_log ORDER BY created_at DESC LIMIT 100')->fetchAll(PDO::FETCH_ASSOC);
@@ -183,7 +291,7 @@ try {
 } catch (PDOException $e) {
     $error = 'Erreur lors du chargement des données';
     logError($e->getMessage());
-    $rdv_list = $devis_list = $users_list = $produits_list = $commandes_list = $messages_list = $emails_list = $promos_list = $avis_list = [];
+    $rdv_list = $devis_list = $users_list = $produits_list = $composants_list = $commandes_list = $messages_list = $emails_list = $promos_list = $avis_list = [];
     $lignesParCommande = [];
 }
 
@@ -521,6 +629,16 @@ $page_noindex = true;
 
     .stock-out { color: var(--accent); font-weight: bold; }
     .stock-low { color: #d8a316; font-weight: bold; }
+
+    .admin-thumb {
+        display: inline-block;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        object-fit: cover;
+        vertical-align: middle;
+        background: var(--surface-alt);
+    }
 </style>
 
 <main class="main-content">
@@ -573,6 +691,7 @@ $page_noindex = true;
             <button type="button" class="tab-btn" data-tab="devis">Devis<?php if ($devisNonTraites > 0): ?><span class="tab-badge"><?php echo $devisNonTraites; ?></span><?php endif; ?></button>
             <button type="button" class="tab-btn" data-tab="commandes">Commandes</button>
             <button type="button" class="tab-btn" data-tab="produits">Produits</button>
+            <button type="button" class="tab-btn" data-tab="composants">Composants PC</button>
             <button type="button" class="tab-btn" data-tab="promos">Codes promo</button>
             <button type="button" class="tab-btn" data-tab="avis">Avis clients</button>
             <button type="button" class="tab-btn" data-tab="messages">Messages<?php if ($messagesNonLus > 0): ?><span class="tab-badge"><?php echo $messagesNonLus; ?></span><?php endif; ?></button>
@@ -759,7 +878,7 @@ $page_noindex = true;
         <div class="tab-panel" id="tab-produits">
             <div class="admin-card">
                 <h3 class="card-title">Ajouter un produit</h3>
-                <form method="POST" class="add-product-form">
+                <form method="POST" class="add-product-form" enctype="multipart/form-data">
                     <?php echo csrfField(); ?>
                     <input type="hidden" name="action" value="add_produit">
                     <div>
@@ -775,8 +894,12 @@ $page_noindex = true;
                         </select>
                     </div>
                     <div>
-                        <label>Icône (emoji)</label>
+                        <label>Icône (emoji, repli si pas d'image)</label>
                         <input type="text" name="icone" value="📦" maxlength="4">
+                    </div>
+                    <div>
+                        <label>Image (JPG/PNG/WEBP, 3 Mo max)</label>
+                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp">
                     </div>
                     <div>
                         <label>Prix (€)</label>
@@ -822,13 +945,18 @@ $page_noindex = true;
                     <tbody>
                         <?php foreach ($produits_list as $p): ?>
                         <tr>
-                            <td><?php echo $p['icone']; ?> <?php echo htmlspecialchars($p['nom']); ?><br><span style="font-size:.7rem;"><?php echo $categories[$p['categorie']] ?? $p['categorie']; ?></span></td>
+                            <td><?php echo visuelHtml($p, 'produits', $p['nom'], 'admin-thumb'); ?> <?php echo htmlspecialchars($p['nom']); ?><br><span style="font-size:.7rem;"><?php echo $categories[$p['categorie']] ?? $p['categorie']; ?></span></td>
                             <td>
-                                <form method="POST" class="inline-form">
+                                <form method="POST" class="inline-form" enctype="multipart/form-data">
                                     <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="edit_produit">
                                     <input type="hidden" name="produit_id" value="<?php echo $p['id']; ?>">
                                     <span class="field"><label>Nom</label><input type="text" name="nom" value="<?php echo htmlspecialchars($p['nom']); ?>"></span>
+                                    <span class="field"><label>Icône</label><input type="text" name="icone" value="<?php echo htmlspecialchars($p['icone']); ?>" maxlength="4" style="width:50px;"></span>
+                                    <span class="field"><label>Image</label><input type="file" name="image" accept="image/png,image/jpeg,image/webp" style="width:150px;"></span>
+                                    <?php if (!empty($p['image'])): ?>
+                                        <span class="field"><label>&nbsp;</label><label style="font-weight:normal;white-space:nowrap;"><input type="checkbox" name="supprimer_image" style="width:auto;"> retirer l'image</label></span>
+                                    <?php endif; ?>
                                     <span class="field"><label>Prix €</label><input type="number" step="0.01" name="prix" value="<?php echo $p['prix']; ?>"></span>
                                     <span class="field"><label>Prix barré</label><input type="number" step="0.01" name="prix_barre" value="<?php echo $p['prix_barre']; ?>" placeholder="—"></span>
                                     <span class="field"><label>État</label>
@@ -854,6 +982,132 @@ $page_noindex = true;
                         <?php endforeach; ?>
                         <?php if (empty($produits_list)): ?>
                             <tr><td colspan="3">Aucun produit dans le catalogue.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPOSANTS PC (configurateur) -->
+        <div class="tab-panel" id="tab-composants">
+            <div class="admin-card">
+                <h3 class="card-title">Ajouter un composant</h3>
+                <form method="POST" class="add-product-form" enctype="multipart/form-data">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="add_composant">
+                    <div>
+                        <label>Type</label>
+                        <select name="type" required>
+                            <?php foreach ($composantsTypes as $key => $label): ?>
+                                <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Marque</label>
+                        <input type="text" name="marque" placeholder="—" required>
+                    </div>
+                    <div>
+                        <label>Nom</label>
+                        <input type="text" name="nom" required>
+                    </div>
+                    <div>
+                        <label>Icône (emoji, repli si pas d'image)</label>
+                        <input type="text" name="icone" value="🔧" maxlength="4">
+                    </div>
+                    <div>
+                        <label>Image (JPG/PNG/WEBP, 3 Mo max)</label>
+                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp">
+                    </div>
+                    <div>
+                        <label>Prix (€, 0 = inclus/gratuit)</label>
+                        <input type="number" step="0.01" min="0" name="prix" required>
+                    </div>
+                    <div>
+                        <label>Stock</label>
+                        <input type="number" name="stock" min="0" value="5">
+                    </div>
+                    <div>
+                        <label>Socket (CPU/carte mère)</label>
+                        <input type="text" name="socket" placeholder="AM5, LGA1700...">
+                    </div>
+                    <div>
+                        <label>Type RAM (CPU/carte mère/RAM)</label>
+                        <input type="text" name="ram_type" placeholder="DDR4, DDR5...">
+                    </div>
+                    <div>
+                        <label>Format (carte mère/boîtier)</label>
+                        <input type="text" name="form_factor" placeholder="ATX, mATX, ITX...">
+                    </div>
+                    <div>
+                        <label>Puissance alim. (W)</label>
+                        <input type="number" name="wattage" min="0" placeholder="650">
+                    </div>
+                    <div>
+                        <label>TDP composant (W)</label>
+                        <input type="number" name="power_draw" min="0" placeholder="105">
+                    </div>
+                    <div>
+                        <label>Capacité (RAM/stockage)</label>
+                        <input type="text" name="capacite" placeholder="16 Go, 1 To...">
+                    </div>
+                    <div class="full">
+                        <label>Description</label>
+                        <textarea name="description"></textarea>
+                    </div>
+                    <div>
+                        <button type="submit">Ajouter le composant</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="card-title">Catalogue du configurateur</h3>
+                <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Composant</th><th>Modifier</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($composants_list as $c): ?>
+                        <tr>
+                            <td><?php echo visuelHtml($c, 'composants', $c['nom'], 'admin-thumb'); ?> <?php echo htmlspecialchars(($c['marque'] !== '—' ? $c['marque'] . ' ' : '') . $c['nom']); ?><br><span style="font-size:.7rem;"><?php echo $composantsTypes[$c['type']] ?? $c['type']; ?></span></td>
+                            <td>
+                                <form method="POST" class="inline-form" enctype="multipart/form-data">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="edit_composant">
+                                    <input type="hidden" name="composant_id" value="<?php echo $c['id']; ?>">
+                                    <span class="field"><label>Marque</label><input type="text" name="marque" value="<?php echo htmlspecialchars($c['marque']); ?>" style="width:90px;"></span>
+                                    <span class="field"><label>Nom</label><input type="text" name="nom" value="<?php echo htmlspecialchars($c['nom']); ?>"></span>
+                                    <span class="field"><label>Icône</label><input type="text" name="icone" value="<?php echo htmlspecialchars($c['icone']); ?>" maxlength="4" style="width:50px;"></span>
+                                    <span class="field"><label>Image</label><input type="file" name="image" accept="image/png,image/jpeg,image/webp" style="width:150px;"></span>
+                                    <?php if (!empty($c['image'])): ?>
+                                        <span class="field"><label>&nbsp;</label><label style="font-weight:normal;white-space:nowrap;"><input type="checkbox" name="supprimer_image" style="width:auto;"> retirer</label></span>
+                                    <?php endif; ?>
+                                    <span class="field"><label>Prix €</label><input type="number" step="0.01" name="prix" value="<?php echo $c['prix']; ?>" style="width:80px;"></span>
+                                    <span class="field"><label>Socket</label><input type="text" name="socket" value="<?php echo htmlspecialchars($c['socket'] ?? ''); ?>" style="width:80px;"></span>
+                                    <span class="field"><label>RAM</label><input type="text" name="ram_type" value="<?php echo htmlspecialchars($c['ram_type'] ?? ''); ?>" style="width:60px;"></span>
+                                    <span class="field"><label>Format</label><input type="text" name="form_factor" value="<?php echo htmlspecialchars($c['form_factor'] ?? ''); ?>" style="width:70px;"></span>
+                                    <span class="field"><label>W alim.</label><input type="number" name="wattage" value="<?php echo htmlspecialchars($c['wattage'] ?? ''); ?>" style="width:60px;"></span>
+                                    <span class="field"><label>TDP</label><input type="number" name="power_draw" value="<?php echo htmlspecialchars($c['power_draw'] ?? ''); ?>" style="width:60px;"></span>
+                                    <span class="field"><label>Capacité</label><input type="text" name="capacite" value="<?php echo htmlspecialchars($c['capacite'] ?? ''); ?>" style="width:70px;"></span>
+                                    <span class="field"><label>Stock</label><input type="number" name="stock" value="<?php echo (int) $c['stock']; ?>" style="width:60px;"></span>
+                                    <button type="submit" class="btn-small">Enregistrer</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="POST" onsubmit="return confirm('Supprimer ce composant ?')">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="delete_composant">
+                                    <input type="hidden" name="composant_id" value="<?php echo $c['id']; ?>">
+                                    <button type="submit" class="btn-delete">Suppr.</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($composants_list)): ?>
+                            <tr><td colspan="3">Aucun composant dans le configurateur.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
