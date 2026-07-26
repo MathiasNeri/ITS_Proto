@@ -523,35 +523,133 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
         min-height: 1.6em;
     }
 
-    .category-detail {
-        background: var(--surface);
-        border: 1px solid var(--divider);
-        border-radius: var(--radius-md);
-        padding: 1.6rem;
-        box-shadow: var(--shadow-sm);
+    .category-drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--ease);
+        z-index: 1099;
     }
 
-    .category-detail-header {
+    .category-drawer-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .category-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100vh;
+        width: min(460px, 100vw);
+        background: var(--surface);
+        box-shadow: -12px 0 30px rgba(0, 0, 0, .35);
+        transform: translateX(100%);
+        transition: transform var(--ease);
+        z-index: 1100;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .category-drawer.open {
+        transform: translateX(0);
+    }
+
+    .category-drawer-header {
         display: flex;
         align-items: center;
         gap: 1rem;
-        margin-bottom: 1.2rem;
-    }
-
-    .category-detail-back {
-        background: var(--surface-alt);
-        border: none;
-        border-radius: var(--radius-sm);
-        color: var(--text);
-        padding: .5rem .9rem;
-        font-size: .8rem;
-        font-weight: bold;
-        cursor: pointer;
+        padding: 1.2rem 1.4rem;
+        border-bottom: 1px solid var(--divider);
         flex-shrink: 0;
     }
 
-    .category-detail-back:hover {
+    .category-drawer-back {
+        background: var(--surface-alt);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        color: var(--text);
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background-color var(--ease);
+    }
+
+    .category-drawer-back:hover {
         background: var(--surface-deep);
+    }
+
+    .category-drawer-title {
+        font-size: 1.1rem;
+        color: var(--accent);
+        margin: 0;
+    }
+
+    .category-drawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem 1.4rem 2rem;
+    }
+
+    .category-drawer .options-grid {
+        display: flex;
+        flex-direction: column;
+        gap: .8rem;
+    }
+
+    .category-drawer .option-card {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem 1rem;
+        padding: .9rem 1rem;
+    }
+
+    .category-drawer .option-card .option-thumb-img,
+    .category-drawer .option-card .option-icon {
+        order: 1;
+        flex-shrink: 0;
+    }
+
+    .category-drawer .option-card .option-thumb-img {
+        width: 48px;
+        height: 48px;
+    }
+
+    .category-drawer .option-card .option-icon {
+        font-size: 1.8rem;
+    }
+
+    .category-drawer .option-card .option-name {
+        order: 2;
+        flex: 1 1 140px;
+        padding-right: 0;
+    }
+
+    .category-drawer .option-card .option-specs {
+        order: 3;
+        flex-basis: 100%;
+        margin-left: 64px;
+    }
+
+    .category-drawer .option-card .option-desc {
+        display: none;
+    }
+
+    .category-drawer .option-card .option-price {
+        order: 4;
+        margin-left: auto;
+    }
+
+    .category-drawer .option-card input[type="radio"],
+    .category-drawer .option-card input[type="checkbox"] {
+        order: 5;
+        position: static;
+        margin: 0;
     }
 
     .config-section-title {
@@ -964,9 +1062,12 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             font-size: 1.6rem;
         }
 
-        .config-section,
-        .category-detail {
+        .config-section {
             padding: 1rem;
+        }
+
+        .category-drawer-body {
+            padding: 1rem 1rem 1.5rem;
         }
 
         .options-grid {
@@ -1044,7 +1145,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     <button type="button" class="category-scroll-btn" id="categoryScrollLeft" aria-label="Précédent">‹</button>
                     <div class="category-strip" id="categoryStrip">
                         <?php foreach ($categories as $type): ?>
-                            <div class="category-card<?php echo $type === $categories[0] ? ' active' : ''; ?>" data-type="<?php echo $type; ?>">
+                            <div class="category-card" data-type="<?php echo $type; ?>">
                                 <?php if (in_array($type, $requis, true)): ?>
                                     <span class="category-card-required">Obligatoire</span>
                                 <?php endif; ?>
@@ -1058,10 +1159,13 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                     <button type="button" class="category-scroll-btn" id="categoryScrollRight" aria-label="Suivant">›</button>
                 </div>
 
-                <div class="category-detail">
-                    <div class="category-detail-header">
-                        <h2 class="config-section-title" id="categoryDetailTitle">Choisissez votre <?php echo htmlspecialchars(mb_strtolower($labels[$categories[0]])); ?></h2>
+                <div class="category-drawer-backdrop" id="categoryDrawerBackdrop"></div>
+                <div class="category-drawer" id="categoryDrawer">
+                    <div class="category-drawer-header">
+                        <button type="button" class="category-drawer-back" id="categoryDrawerBack" aria-label="Fermer">←</button>
+                        <h2 class="category-drawer-title" id="categoryDetailTitle">Choisissez votre <?php echo htmlspecialchars(mb_strtolower($labels[$categories[0]])); ?></h2>
                     </div>
+                    <div class="category-drawer-body">
 
                     <?php foreach ($categories as $type): ?>
                         <div class="category-options-panel<?php echo $type === $categories[0] ? ' active' : ''; ?>" data-type-panel="<?php echo $type; ?>">
@@ -1106,6 +1210,7 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                             </div>
                         </div>
                     <?php endforeach; ?>
+                    </div>
                 </div>
 
                 <p class="missing-warning" id="configMissingWarning" hidden></p>
@@ -1480,23 +1585,28 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
             if (activeCard) {
                 activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }
+
+            var drawer = document.getElementById('categoryDrawer');
+            var backdrop = document.getElementById('categoryDrawerBackdrop');
+            if (drawer) drawer.classList.add('open');
+            if (backdrop) backdrop.classList.add('open');
+        }
+
+        function closeCategoryDrawer() {
+            var drawer = document.getElementById('categoryDrawer');
+            var backdrop = document.getElementById('categoryDrawerBackdrop');
+            if (drawer) drawer.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('open');
         }
 
         document.querySelectorAll('.category-choose-btn, .category-card').forEach(function (el) {
             el.addEventListener('click', function () { goToCategory(el.dataset.type); });
         });
 
-        // Une fois un composant choisi, ouvre automatiquement la catégorie
-        // suivante dans l'ordre (seulement en avançant, jamais quand on
-        // revient modifier un choix déjà fait plus loin dans la liste).
-        function advanceToNextCategory(type) {
-            var idx = categories.indexOf(type);
-            if (idx === -1 || idx === categories.length - 1) return;
-            var nextType = categories[idx + 1];
-            if (!getSelected(nextType)) {
-                goToCategory(nextType);
-            }
-        }
+        var categoryDrawerBack = document.getElementById('categoryDrawerBack');
+        if (categoryDrawerBack) categoryDrawerBack.addEventListener('click', closeCategoryDrawer);
+        var categoryDrawerBackdrop = document.getElementById('categoryDrawerBackdrop');
+        if (categoryDrawerBackdrop) categoryDrawerBackdrop.addEventListener('click', closeCategoryDrawer);
 
         var categoryStrip = document.getElementById('categoryStrip');
         var categoryScrollLeft = document.getElementById('categoryScrollLeft');
@@ -1513,8 +1623,10 @@ $page_description = "Configurez votre PC sur mesure : gaming ou bureautique, com
                 refresh();
                 var card = input.closest('.option-card');
                 var type = card ? card.dataset.type : null;
+                // Choisir un composant referme le tiroir : on revoit la grille de
+                // catégories et on reclique "Je choisis" pour passer à la suivante.
                 if (input.type === 'radio' && type && categories.indexOf(type) !== -1) {
-                    advanceToNextCategory(type);
+                    closeCategoryDrawer();
                 }
             });
         });

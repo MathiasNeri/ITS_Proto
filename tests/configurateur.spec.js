@@ -21,7 +21,9 @@ test.describe('Configurateur PC', () => {
         await page.click('#usageCustomBtn');
         // Le boîtier doit être choisi en premier : le CPU reste verrouillé
         // (grisé, "Je choisis" désactivé) tant que la catégorie précédente
-        // dans l'ordre obligatoire n'a pas de sélection.
+        // dans l'ordre obligatoire n'a pas de sélection. Chaque catégorie
+        // s'ouvre dans un tiroir qui se referme une fois le choix fait.
+        await page.click('.category-card[data-type="boitier"] .category-choose-btn');
         await page.locator('.option-card[data-type="boitier"]').first().click();
         await page.click('.category-card[data-type="cpu"] .category-choose-btn');
         const cpuCard = page.locator('.option-card[data-type="cpu"]', { hasText: 'Ryzen 5 7600X' });
